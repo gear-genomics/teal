@@ -67,24 +67,9 @@ int main(int argc, char** argv) {
     if (!estimateTrim(bc)) {
       if (!estimateTrim(bc, tr)) return -1;
     }
-  
-    // Write ABIF signal
-    uint16_t backtrim = bc.primary.size() - bc.rtrim;
-    uint32_t bcpos = 0;
-    uint16_t idx = bc.bcPos[bcpos];
-    std::cout << "pos\tpeakA\tpeakC\tpeakG\tpeakT\tbasenum\tmaxA\tmaxC\tmaxG\tmaxT\tprimary\tsecondary\tconsensus\tqual\ttrim" << std::endl;
-    for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
-      std::cout << (i+1) << "\t";
-      for(uint32_t k =0; k<4; ++k) std::cout << tr.traceACGT[k][i] << "\t";
-      if (idx == i) {
-	std::cout << (bcpos+1) << "\t";
-	for(uint32_t k =0; k<4; ++k) std::cout << bc.peak[k][bcpos] << "\t";
-	std::cout << bc.primary[bcpos] << "\t" << bc.secondary[bcpos] << "\t" << bc.consensus[bcpos] << "\t" << (int32_t) tr.qual[bcpos] << "\t";
-	if ((bcpos < bc.ltrim) || (bcpos >= backtrim)) std::cout << "Y" << std::endl;
-	else std::cout << "N" << std::endl;
-	idx = bc.bcPos[++bcpos];
-      } else std::cout << "NA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA" << std::endl;
-    }
+
+    traceJsonOut("out.json", bc, tr);
+    traceTxtOut("out.tsv", bc, tr);
   }
 
   return 0;

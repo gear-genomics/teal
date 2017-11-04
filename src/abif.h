@@ -557,6 +557,100 @@ findBreakpoint(TConfig const& c, BaseCalls& bc) {
 
   return true;
 }
+
+inline void
+traceTxtOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
+  uint16_t backtrim = bc.primary.size() - bc.rtrim;
+  uint32_t bcpos = 0;
+  uint16_t idx = bc.bcPos[bcpos];
+  std::ofstream rfile(outfile.c_str());
+  rfile << "pos\tpeakA\tpeakC\tpeakG\tpeakT\tbasenum\tmaxA\tmaxC\tmaxG\tmaxT\tprimary\tsecondary\tconsensus\tqual\ttrim" << std::endl;
+  for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
+    rfile << (i+1) << "\t";
+    for(uint32_t k =0; k<4; ++k) rfile << tr.traceACGT[k][i] << "\t";
+    if (idx == i) {
+      rfile << (bcpos+1) << "\t";
+      for(uint32_t k =0; k<4; ++k) rfile << bc.peak[k][bcpos] << "\t";
+      rfile << bc.primary[bcpos] << "\t" << bc.secondary[bcpos] << "\t" << bc.consensus[bcpos] << "\t" << (int32_t) tr.qual[bcpos] << "\t";
+      if ((bcpos < bc.ltrim) || (bcpos >= backtrim)) rfile << "Y" << std::endl;
+      else rfile << "N" << std::endl;
+      idx = bc.bcPos[++bcpos];
+    } else rfile << "NA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA" << std::endl;
+  }
+}
+ 
+inline void
+traceJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
+  std::ofstream rfile(outfile.c_str());
+  rfile << "{" << std::endl;
+  rfile << "\"pos\": [";
+  for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
+    if (i!=0) rfile << ", ";
+    rfile << (i+1);
+  }
+  rfile << "]," << std::endl;
+  rfile << "\"peakA\": [";
+  for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
+    if (i!=0) rfile << ", ";
+    rfile << tr.traceACGT[0][i];
+  }
+  rfile << "]," << std::endl;
+  rfile << "\"peakC\": [";
+  for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
+    if (i!=0) rfile << ", ";
+    rfile << tr.traceACGT[1][i];
+  }
+  rfile << "]," << std::endl;
+  rfile << "\"peakG\": [";
+  for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
+    if (i!=0) rfile << ", ";
+    rfile << tr.traceACGT[2][i];
+  }
+  rfile << "]," << std::endl;
+  rfile << "\"peakT\": [";
+  for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
+    if (i!=0) rfile << ", ";
+    rfile << tr.traceACGT[3][i];
+  }
+  rfile << "]," << std::endl;
+
+  // Basecalls
+  uint32_t bcpos = 0;
+  uint16_t idx = bc.bcPos[0];
+  rfile << "\"basecallPos\": [";
+  for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
+    if (idx == i) {
+      if (i!=bc.bcPos[0]) rfile << ", ";
+      rfile << (i+1);
+      idx = bc.bcPos[++bcpos];
+    }
+  }
+  rfile << "]," << std::endl;
+  bcpos = 0;
+  idx = bc.bcPos[0];
+  rfile << "\"primary\": [";
+  for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
+    if (idx == i) {
+      if (i!=bc.bcPos[0]) rfile << ", ";
+      rfile << "\"" << bc.primary[bcpos] << "\"";
+      idx = bc.bcPos[++bcpos];
+    }
+  }
+  rfile << "]," << std::endl;
+  bcpos = 0;
+  idx = bc.bcPos[0];
+  rfile << "\"secondary\": [";
+  for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
+    if (idx == i) {
+      if (i!=bc.bcPos[0]) rfile << ", ";
+      rfile << "\"" << bc.secondary[bcpos] << "\"";
+      idx = bc.bcPos[++bcpos];
+    }
+  }
+  rfile << "]" << std::endl;
+  rfile << "}" << std::endl;
+  rfile.close();
+}
  
 
 }
