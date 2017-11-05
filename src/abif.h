@@ -26,11 +26,13 @@ Contact: Tobias Rausch (rausch@embl.de)
 
 #include <vector>
 #include <iostream>
+#include <sstream>
 #include <cmath>
 #include <fstream>
 #include <string>
 #include <iterator>
 #include <algorithm>
+#include <stdint.h>
 
 namespace teal
 {
@@ -70,6 +72,15 @@ struct BaseCalls {
   TPosition bcPos;
 };
 
+
+template<typename TValue>
+inline std::string
+_toString(TValue const a) {
+  std::stringstream ss;
+  ss << a;
+  return ss.str();
+}  
+ 
 template<typename TMountains>
 inline void
 findLocalMaxima(TMountains const& trace, TMountains& pos) {
@@ -206,7 +217,7 @@ readab(std::string const& filename, Trace& tr) {
       ab.nelements = readBinI32(entry, 12);
       ab.dsize = readBinI32(entry, 16);
       ab.doffset = readBinI32(entry, 20);
-      ab.key = ab.name + "." + std::to_string(ab.number);
+      ab.key = ab.name + "." + _toString(ab.number);
       if (ab.name == "PCON") ab.etype = 1;
       abi.push_back(ab);
       //std::cout << ab.key << "\t" << ab.name << "\t" << ab.number << "\t" << ab.etype << "\t" << ab.esize << "\t" << ab.nelements << "\t" << ab.dsize << "\t" << ab.doffset << std::endl;
@@ -324,7 +335,7 @@ basecall(Trace const& tr, BaseCalls& bc, float sigratio) {
 	bestIdx = k;
       }
     }
-    std::cout << bc.bcPos.empty() << ',' << bc.bcPos.size() << '\t' << pIdx.size() << ',' << bestIdx << ',' << pIdx[bestIdx] << std::endl;
+    //std::cout << bc.bcPos.empty() << ',' << bc.bcPos.size() << '\t' << pIdx.size() << ',' << bestIdx << ',' << pIdx[bestIdx] << std::endl;
     bc.bcPos.push_back(pIdx[bestIdx]);
     if ((validBases == 4) || (validBases == 0)) {
       primary.push_back('N');

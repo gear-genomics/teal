@@ -6,7 +6,8 @@ PWD = $(shell pwd)
 
 # Flags
 CXX=g++
-CXXFLAGS += -std=c++11 -pedantic -W -Wall
+# -std=c++11
+CXXFLAGS += -pedantic -W -Wall
 
 ifeq (${STATIC}, 1)
 	LDFLAGS += -static -static-libgcc -pthread
