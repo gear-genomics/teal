@@ -47,7 +47,8 @@ struct Abif {
 };
 
 struct Trace {
-  typedef std::vector<int16_t> TMountains;
+  typedef int16_t TValue;
+  typedef std::vector<TValue> TMountains;
   typedef std::vector<TMountains> TACGTMountains;
   typedef std::vector<uint8_t> TQual;
   
@@ -60,11 +61,11 @@ struct Trace {
 
 
 struct BaseCalls {
-  typedef std::vector<int16_t> TPosition;
+  typedef Trace::TValue TValue;
+  typedef std::vector<TValue> TPosition;
+  typedef std::vector<TPosition> TPositionACGT;
   typedef std::vector<float> TPeak;
   typedef std::vector<TPeak> TPeakACGT;
-  typedef std::vector<TPosition> TPositionACGT;
-  typedef std::vector<uint16_t> TBCPos;
   
   bool indelshift;
   uint16_t ltrim;
@@ -73,7 +74,7 @@ struct BaseCalls {
   std::string consensus;
   std::string primary;
   std::string secondary;
-  TBCPos bcPos;
+  TPosition bcPos;
   TPeakACGT peak;
   TPositionACGT pos;
 
@@ -106,8 +107,9 @@ peak(TMountains const& trace, TMountains const& maxima, float const s, float con
   }
 }
 
+template<typename TMountains>
 inline char
-iupac(std::vector<int16_t> const& p) {
+iupac(TMountains const& p) {
   if (p.size() == 1) {
     if (p[0] == 0) return 'A';
     else if (p[0] == 1) return 'C';
@@ -126,7 +128,8 @@ iupac(std::vector<int16_t> const& p) {
 
 inline char
 iupac(char const one, char const two) {
-  std::vector<int16_t> p(2);
+  typedef Trace::TMountains TMountains;
+  TMountains p(2, 0);
   if (one == 'A') p[0] = 0;
   else if (one == 'C') p[0] = 1;
   else if (one == 'G') p[0] = 2;
