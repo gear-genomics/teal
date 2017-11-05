@@ -26,7 +26,6 @@ Contact: Tobias Rausch (rausch@embl.de)
 using namespace teal;
 
 struct Config {
-  uint16_t oft;   //0: *.json, 1: *.tsv
   float pratio;
   std::string version;
   std::string ab;

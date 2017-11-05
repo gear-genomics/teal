@@ -48,22 +48,14 @@ struct Abif {
 
 struct Trace {
   typedef std::vector<int16_t> TMountains;
+  typedef std::vector<TMountains> TACGTMountains;
   typedef std::vector<uint8_t> TQual;
   
-  std::string acgtOrder;
   std::string basecalls1;
   std::string basecalls2;
   TQual qual;
   TMountains basecallpos;
-  TMountains peaks1;
-  TMountains peaks2;
-  std::vector<TMountains> trace;
-  std::vector<TMountains> traceACGT;
-
-  Trace() {
-    trace.resize(4);
-    traceACGT.resize(4);
-  }
+  TACGTMountains traceACGT;
 };
 
 
@@ -90,27 +82,28 @@ struct BaseCalls {
     pos.resize(4);
   }
 };
-  
+
+template<typename TMountains>
 inline void
-maxima(std::vector<int16_t> const& trace, std::vector<int16_t>& pos) {
-  for(uint16_t i = 1; i < trace.size() - 1; ++i) {
+findLocalMaxima(TMountains const& trace, TMountains& pos) {
+  for(uint32_t i = 1; i < trace.size() - 1; ++i) {
     if (((trace[i-1] <= trace[i]) && (trace[i] > trace[i+1])) || ((trace[i-1] < trace[i]) && (trace[i] >= trace[i+1]))) pos.push_back(i);
   }
 }
 
-inline std::pair<int16_t, int16_t>
-peak(std::vector<int16_t> const& trace, std::vector<int16_t> const& maxima, int16_t s, int16_t e) {
-  int16_t bestVal = 0;
-  int16_t bestIdx = 0;
+template<typename TMountains>
+inline void
+peak(TMountains const& trace, TMountains const& maxima, float const s, float const e, typename TMountains::value_type& bestVal, typename TMountains::value_type& bestIdx) {
+  bestVal = 0;
+  bestIdx = 0;
   for(uint32_t i = 0; i<maxima.size(); ++i) {
-    if ((maxima[i] > s) && (maxima[i] < e)) {
+    if (((float) maxima[i] > s) && ((float) maxima[i] < e)) {
       if (trace[maxima[i]] > bestVal) {
 	bestIdx = maxima[i];
 	bestVal = trace[maxima[i]];
       }
     }
   }
-  return std::make_pair(bestVal, bestIdx);
 }
 
 inline char
@@ -151,27 +144,6 @@ iupac(char const one, char const two) {
 }
   
 
-// Big endian machine?
-inline bool
-bigendian() {
-  int num = 1;
-  if (*(char *)&num == 1) return false;
-  else return true;
-}
-
-inline void
-plotByte(char byte) {
-  for (int i = 7; 0<=i; i--) printf("%d", (byte>>i) & 0x01);
-  std::cout << std::endl;
-}
-
-inline void
-plotUInt32(uint32_t byte) {
-  for (int i = 31; 0<=i; i--) printf("%d", (byte>>i) & 0x01);
-  std::cout << std::endl;
-}
-
-
 inline std::string
 readBinStr(std::vector<char> const& buffer, int32_t pos, int32_t len) {
   return std::string(buffer.begin() + pos, buffer.begin() + pos + len);
@@ -187,27 +159,28 @@ readBinI32(std::vector<char> const& buffer, int32_t pos) {
   return (((uint32_t) 0) | ((uint8_t)(buffer[pos])<<24) | ((uint8_t)(buffer[pos+1])<<16) | ((uint8_t)(buffer[pos+2])<<8) | ((uint8_t)(buffer[pos+3])));
 }
 
-inline uint16_t
-readBinUI16(std::vector<char> const& buffer, int32_t pos) {
-  return (((uint16_t) 0) | ((uint8_t)(buffer[pos])<<8) | ((uint8_t)(buffer[pos+1])));
-}
-
 inline int16_t
 readBinI16(std::vector<char> const& buffer, int32_t pos) {
   return (((uint16_t) 0) | ((uint8_t)(buffer[pos])<<8) | ((uint8_t)(buffer[pos+1])));
 }
 
 inline std::string
-removeNonDna(std::string const& str) {
+replaceNonDna(std::string const& str) {
   std::string out;
   for(uint32_t i = 0; i<str.size();++i) {
     if ((str[i] == 'A') || (str[i] == 'C') || (str[i] == 'G') || (str[i] == 'T')) out = out.append(str, i, 1);
+    else out = out.append("N");
   }
   return out;
 }
 
 inline bool
 readab(std::string const& filename, Trace& tr) {
+  typedef Trace::TACGTMountains TACGTMountains;
+  typedef TACGTMountains::value_type TMountains;
+  TACGTMountains trace(4, TMountains());
+  std::string acgtOrder;
+
   // Read the mountains
   std::ifstream bfile(filename.c_str(), std::ios_base::binary | std::ios::ate);
   std::streamsize bsize = bfile.tellg();
@@ -256,37 +229,29 @@ readab(std::string const& filename, Trace& tr) {
       if (abi[i].dsize > 4) ofsraw = abi[i].doffset;
       std::vector<char> entry(buffer.begin()+ofsraw, buffer.begin()+ofsraw + abi[i].nelements*abi[i].esize + 1);
       if (abi[i].etype == 2) {
-	if (abi[i].key == "PBAS.2") tr.basecalls1 = removeNonDna(readBinStr(entry, 0, entry.size()));
-	else if (abi[i].key == "P2BA.1") tr.basecalls2 = removeNonDna(readBinStr(entry, 0, entry.size()));
-	else if (abi[i].key == "FWO_.1") tr.acgtOrder = readBinStr(entry, 0, entry.size());
+	if (abi[i].key == "PBAS.2") tr.basecalls1 = replaceNonDna(readBinStr(entry, 0, entry.size()));
+	else if (abi[i].key == "P2BA.1") tr.basecalls2 = replaceNonDna(readBinStr(entry, 0, entry.size()));
+	else if (abi[i].key == "FWO_.1") acgtOrder = readBinStr(entry, 0, entry.size());
       } else if (abi[i].etype == 4) {
 	if (abi[i].key == "PLOC.2") {
 	  for(int32_t k = 0; k < abi[i].nelements; ++k) {
 	    tr.basecallpos.push_back(readBinI16(entry, k*2));
 	  }
-	} else if (abi[i].key == "P1AM.1") {
-	  for(int32_t k = 0; k < abi[i].nelements; ++k) {
-	    tr.peaks1.push_back(readBinI16(entry, k*2));
-	  }
-	} else if (abi[i].key == "P2AM.1") {
-	  for(int32_t k = 0; k < abi[i].nelements; ++k) {
-	    tr.peaks2.push_back(readBinI16(entry, k*2));
-	  }
 	} else if (abi[i].key == "DATA.9") {
 	  for(int32_t k = 0; k < abi[i].nelements; ++k) {
-	    tr.trace[0].push_back(readBinI16(entry, k*2));
+	    trace[0].push_back(readBinI16(entry, k*2));
 	  }
 	} else if (abi[i].key == "DATA.10") {
 	  for(int32_t k = 0; k < abi[i].nelements; ++k) {
-	    tr.trace[1].push_back(readBinI16(entry, k*2));
+	    trace[1].push_back(readBinI16(entry, k*2));
 	  }
 	} else if (abi[i].key == "DATA.11") {
 	  for(int32_t k = 0; k < abi[i].nelements; ++k) {
-	    tr.trace[2].push_back(readBinI16(entry, k*2));
+	    trace[2].push_back(readBinI16(entry, k*2));
 	  }
 	} else if (abi[i].key == "DATA.12") {
 	  for(int32_t k = 0; k < abi[i].nelements; ++k) {
-	    tr.trace[3].push_back(readBinI16(entry, k*2));
+	    trace[3].push_back(readBinI16(entry, k*2));
 	  }
 	}
       } else if (abi[i].etype == 1) {
@@ -300,17 +265,22 @@ readab(std::string const& filename, Trace& tr) {
   }
   bfile.close();
 
-  // Resize basecalls to position vector
-  tr.basecalls1.resize(tr.basecallpos.size());
-  tr.basecalls2.resize(tr.basecallpos.size());
-  tr.qual.resize(tr.basecallpos.size());
+  // Fix size of basecall vectors
+  uint32_t minsize1 = std::min(tr.basecalls1.size(), tr.basecalls2.size());
+  uint32_t minsize2 = std::min(tr.qual.size(), tr.basecallpos.size());
+  uint32_t minsize = std::min(minsize1, minsize2);
+  tr.basecallpos.resize(minsize);
+  tr.basecalls1.resize(minsize);
+  tr.basecalls2.resize(minsize);
+  tr.qual.resize(minsize);
 
   // Assign trace
-  for(uint32_t i = 0; i<tr.acgtOrder.size(); ++i) {
-    if (tr.acgtOrder[i] == 'A') tr.traceACGT[0] = tr.trace[i];
-    else if (tr.acgtOrder[i] == 'C') tr.traceACGT[1] = tr.trace[i];
-    else if (tr.acgtOrder[i] == 'G') tr.traceACGT[2] = tr.trace[i];
-    else if (tr.acgtOrder[i] == 'T') tr.traceACGT[3] = tr.trace[i];
+  tr.traceACGT.resize(4, TMountains());
+  for(uint32_t i = 0; i < acgtOrder.size(); ++i) {
+    if (acgtOrder[i] == 'A') tr.traceACGT[0] = trace[i];
+    else if (acgtOrder[i] == 'C') tr.traceACGT[1] = trace[i];
+    else if (acgtOrder[i] == 'G') tr.traceACGT[2] = trace[i];
+    else if (acgtOrder[i] == 'T') tr.traceACGT[3] = trace[i];
   }
   
   // Close input file
@@ -320,16 +290,17 @@ readab(std::string const& filename, Trace& tr) {
 
 inline void
 basecall(Trace const& tr, BaseCalls& bc, float sigratio) {
-  typedef std::vector<int16_t> TMount;
-  typedef std::vector<TMount> TMountACGT;
-  TMountACGT peakACGT(4);
-  for(uint32_t k = 0; k<4; ++k) maxima(tr.traceACGT[k], peakACGT[k]);
+  typedef Trace::TACGTMountains TACGTMountains;
+  typedef TACGTMountains::value_type TMountains;
+  typedef TMountains::value_type TValue;
+  TACGTMountains peakACGT(4, TMountains());
+  for(uint32_t k = 0; k<4; ++k) findLocalMaxima(tr.traceACGT[k], peakACGT[k]);
 
   // Get peak regions
   std::vector<float> st;
   std::vector<float> ed;
-  int16_t oldVal = 0;
-  int16_t lastDiff = 0;
+  TValue oldVal = 0;
+  TValue lastDiff = 0;
   for(uint32_t i = 0; i<tr.basecallpos.size(); ++i) {
     lastDiff = tr.basecallpos[i] - oldVal;
     st.push_back((float) tr.basecallpos[i] - 0.5 * (float) lastDiff);
@@ -343,29 +314,30 @@ basecall(Trace const& tr, BaseCalls& bc, float sigratio) {
   std::vector<char> secondary;
   std::vector<char> consensus;
   for(uint32_t i = 0; i<st.size(); ++i) {
-    typedef std::pair<int16_t, int16_t> TPeak;
-    TPeak p[4];
-    for(uint32_t k = 0; k<4; ++k) p[k] = peak(tr.traceACGT[k], peakACGT[k], st[i], ed[i]);
-    if ((p[0].first == 0) && (p[1].first == 0) && (p[2].first == 0) && (p[3].first == 0)) continue;
-    int16_t maxVal = 0;
+    TMountains pVal(4, 0);
+    TMountains pIdx(4, 0);
+    for(uint32_t k = 0; k<4; ++k) 
+      peak(tr.traceACGT[k], peakACGT[k], st[i], ed[i], pVal[k], pIdx[k]);
+    if ((pVal[0] == 0) && (pVal[1] == 0) && (pVal[2] == 0) && (pVal[3] == 0)) continue;
+    TValue maxVal = 0;
     for(uint32_t k = 0; k<4; ++k) {
-      if (p[k].first > maxVal) maxVal = p[k].first;
-      bc.peak[k].push_back(p[k].first);
-      bc.pos[k].push_back(p[k].second);
+      if (pVal[k] > maxVal) maxVal = pVal[k];
+      bc.peak[k].push_back(pVal[k]);
+      bc.pos[k].push_back(pIdx[k]);
     }
-    float srat[4];
+    std::vector<float> srat(4, 0);
     float bestRat = 0;
-    int16_t bestIdx = 0;
+    TValue bestIdx = 0;
     int32_t validBases = 0;
     for(uint32_t k = 0; k<4; ++k) {
-      srat[k] = (float) p[k].first / (float)maxVal;
+      srat[k] = (float) pVal[k] / (float) maxVal;
       if (srat[k] >= sigratio) ++validBases;
       if (srat[k] > bestRat) {
 	bestRat = srat[k];
 	bestIdx = k;
       }
     }
-    bc.bcPos.push_back(p[bestIdx].second);
+    bc.bcPos.push_back(pIdx[bestIdx]);
     if ((validBases == 4) || (validBases == 0)) {
       primary.push_back('N');
       secondary.push_back('N');
@@ -375,7 +347,7 @@ basecall(Trace const& tr, BaseCalls& bc, float sigratio) {
       else if (bestIdx == 1) primary.push_back('C');
       else if (bestIdx == 2) primary.push_back('G');
       else if (bestIdx == 3) primary.push_back('T');
-      std::vector<int16_t> leftover;
+      TMountains leftover;
       for(int32_t k = 0; k<4; ++k) 
 	if ((k != bestIdx) && (srat[k] >= sigratio)) leftover.push_back(k);
       secondary.push_back(iupac(leftover));
