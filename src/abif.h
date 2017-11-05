@@ -47,7 +47,7 @@ struct Abif {
 };
 
 struct Trace {
-  typedef int16_t TValue;
+  typedef int32_t TValue;
   typedef std::vector<TValue> TMountains;
   typedef std::vector<TMountains> TACGTMountains;
   typedef std::vector<uint8_t> TQual;
@@ -63,25 +63,11 @@ struct Trace {
 struct BaseCalls {
   typedef Trace::TValue TValue;
   typedef std::vector<TValue> TPosition;
-  typedef std::vector<TPosition> TPositionACGT;
-  typedef std::vector<float> TPeak;
-  typedef std::vector<TPeak> TPeakACGT;
   
-  bool indelshift;
-  uint16_t ltrim;
-  uint16_t rtrim;
-  uint16_t breakpoint;
   std::string consensus;
   std::string primary;
   std::string secondary;
   TPosition bcPos;
-  TPeakACGT peak;
-  TPositionACGT pos;
-
-  BaseCalls() {
-    peak.resize(4);
-    pos.resize(4);
-  }
 };
 
 template<typename TMountains>
@@ -129,6 +115,7 @@ iupac(TMountains const& p) {
 inline char
 iupac(char const one, char const two) {
   typedef Trace::TMountains TMountains;
+  typedef TMountains::value_type TValue;
   TMountains p(2, 0);
   if (one == 'A') p[0] = 0;
   else if (one == 'C') p[0] = 1;
@@ -139,7 +126,7 @@ iupac(char const one, char const two) {
   else if (two == 'G') p[1] = 2;
   else if (two == 'T') p[1] = 3;
   if (p[1] < p[0]) {
-    int16_t tmp = p[0];
+    TValue tmp = p[0];
     p[0] = p[1];
     p[1] = tmp;
   }
@@ -323,11 +310,8 @@ basecall(Trace const& tr, BaseCalls& bc, float sigratio) {
       peak(tr.traceACGT[k], peakACGT[k], st[i], ed[i], pVal[k], pIdx[k]);
     if ((pVal[0] == 0) && (pVal[1] == 0) && (pVal[2] == 0) && (pVal[3] == 0)) continue;
     TValue maxVal = 0;
-    for(uint32_t k = 0; k<4; ++k) {
+    for(uint32_t k = 0; k<4; ++k)
       if (pVal[k] > maxVal) maxVal = pVal[k];
-      bc.peak[k].push_back(pVal[k]);
-      bc.pos[k].push_back(pIdx[k]);
-    }
     std::vector<float> srat(4, 0);
     float bestRat = 0;
     TValue bestIdx = 0;
@@ -340,6 +324,7 @@ basecall(Trace const& tr, BaseCalls& bc, float sigratio) {
 	bestIdx = k;
       }
     }
+    std::cout << bc.bcPos.empty() << ',' << bc.bcPos.size() << '\t' << pIdx.size() << ',' << bestIdx << ',' << pIdx[bestIdx] << std::endl;
     bc.bcPos.push_back(pIdx[bestIdx]);
     if ((validBases == 4) || (validBases == 0)) {
       primary.push_back('N');
@@ -380,182 +365,27 @@ basecall(Trace const& tr, BaseCalls& bc, float sigratio) {
   bc.consensus = std::string(consensus.begin(), consensus.end());
 }
 
-
-inline std::string
-trimmedPSeq(BaseCalls const& bc) {
-  uint16_t len = bc.primary.size() - bc.ltrim - bc.rtrim;
-  return bc.primary.substr(bc.ltrim, len);
-}
-
-inline std::string
-trimmedSecSeq(BaseCalls const& bc) {
-  uint16_t len = bc.secondary.size() - bc.ltrim - bc.rtrim;
-  return bc.secondary.substr(bc.ltrim, len);
-}
-
-inline std::string
-trimmedCSeq(BaseCalls const& bc) {
-  uint16_t len = bc.consensus.size() - bc.ltrim - bc.rtrim;
-  return bc.consensus.substr(bc.ltrim, len);
-}
-
-inline uint16_t
-_estimateCut(std::vector<double> const& score) {
-  double cumscore = 0;
-  uint16_t wsize = 50;
-  uint16_t hsize = score.size() / 2;
-  for(uint16_t i = 0; ((i < wsize) && (i < hsize)); ++i) cumscore += score[i];
-  for(uint16_t k = wsize; k < hsize; ++k) {
-    cumscore -= score[k-wsize];
-    cumscore += score[k];
-    if (cumscore > 0) return k;
-  }
-  return hsize;
-}
-
-inline uint16_t
-_estimateCut(std::string const& seq) {
-  uint16_t trim = 50;  // Default trim size
-  uint16_t ncount = 0;
-  uint16_t wsize = trim;
-  uint16_t hsize = seq.size() / 2;
-  
-  for(uint16_t i = 0; ((i < wsize) && (i < hsize)); ++i)
-    if ((seq[i] != 'A') && (seq[i] != 'C') && (seq[i] != 'G') && (seq[i] != 'T')) ++ncount;
-  for(uint16_t k = wsize; k < hsize; ++k) {
-    if ((seq[k-wsize] != 'A') && (seq[k-wsize] != 'C') && (seq[k-wsize] != 'G') && (seq[k-wsize] != 'T')) --ncount;
-    if ((seq[k] != 'A') && (seq[k] != 'C') && (seq[k] != 'G') && (seq[k] != 'T')) ++ncount;
-    if ((float) ncount / (float) wsize >= 0.1) trim = k;   // take last k above threshold;
-  }
-  return trim;
-}
-     
-
-inline bool
-estimateTrim(BaseCalls& bc) {
-  bc.ltrim = _estimateCut(bc.secondary);
-  bc.rtrim = _estimateCut(std::string(bc.secondary.rbegin(), bc.secondary.rend()));
-
-  // Check overall trim size
-  if ((uint32_t) (bc.ltrim + bc.rtrim + 10) >= (uint32_t) bc.secondary.size()) {
-    std::cerr << "Poor quality Sanger trace where trim sizes are larger than the sequence size!" << std::endl;
-    return false;
-  }
-  return true;
-}
-  
- 
-inline bool
-estimateTrim(BaseCalls& bc, Trace const& tr) {
-  double cutoff = 0.1;
-
-  typedef std::vector<double> TScore;
-  TScore score;
-  for(uint32_t i = 0; i < tr.qual.size(); ++i) score.push_back(cutoff - std::pow((double) 10, (double) tr.qual[i] / (double) -10.0));
-
-  bc.ltrim = _estimateCut(score);
-  TScore rev(score.rbegin(), score.rend());
-  bc.rtrim = _estimateCut(rev);
-
-  // Check overall trim size
-  if ((uint32_t) (bc.ltrim + bc.rtrim + 10) >= (uint32_t) bc.secondary.size()) {
-    std::cerr << "Poor quality Sanger trace where trim sizes are larger than the sequence size!" << std::endl;
-    return false;
-  }
-  return true;
-}
-
-template<typename TConfig>
-inline bool
-findBreakpoint(TConfig const& c, BaseCalls& bc) {
-  int32_t ncount = 0;
-  for(uint32_t i = 0; ((i<c.kmer) && (i<bc.consensus.size())); ++i)
-    if (bc.consensus[i] == 'N') ++ncount;
-  std::vector<float> nratio;
-  nratio.push_back((float)ncount / (float)c.kmer);  
-  for(uint32_t i = c.kmer; i < bc.consensus.size(); ++i) {
-    if (bc.consensus[i-c.kmer] == 'N') --ncount;
-    if (bc.consensus[i] == 'N') ++ncount;
-    nratio.push_back((float)ncount / (float)c.kmer);
-  }
-  float totalN = 0;
-  for(uint32_t i = 0; i < nratio.size(); ++i) totalN += nratio[i];
-  float leftSum = nratio[0];
-  float rightSum = totalN - leftSum;
-  float bestDiff = 0;
-  bool traceleft = true;
-  bc.breakpoint = 0;
-  for(uint32_t i = 1; i < nratio.size() - 1; ++i) {
-    float right = rightSum / (float)(nratio.size() - i);
-    float left = leftSum / (float)i;
-    float diff = std::abs(right - left);
-    if (diff > bestDiff) {
-      bc.breakpoint = i;
-      bestDiff = diff;
-      if (left < right) traceleft = true;
-      else traceleft = false;
-    }
-    leftSum += nratio[i];
-    rightSum -= nratio[i];
-  }
-  bc.indelshift = true;
-  // Forward breakpoint to first N
-  for(uint32_t i = bc.breakpoint; i < bc.consensus.size(); ++i) {
-    if (bc.consensus[i] == 'N') {
-      bc.breakpoint = i;
-      break;
-    }
-  }
-  if ((bc.breakpoint <= bc.ltrim) || ((bc.consensus.size() - bc.breakpoint <= bc.rtrim)) || (bestDiff < 0.25)) {
-    // No indel shift
-    bc.indelshift = false;
-    bc.breakpoint = bc.consensus.size() - bc.rtrim - 1;
-    traceleft = true;
-    bestDiff = 0;
-  }
-
-
-  // Flip trace if indelshift happens to the left
-  if (!traceleft) {
-    bc.breakpoint = (uint16_t) (bc.consensus.size() - bc.breakpoint - 1);
-    std::reverse(bc.consensus.begin(), bc.consensus.end());
-    std::reverse(bc.primary.begin(), bc.primary.end());
-    std::reverse(bc.secondary.begin(), bc.secondary.end());
-    uint16_t tmptrim = bc.ltrim;
-    bc.ltrim = bc.rtrim;
-    bc.rtrim = tmptrim;
-    for(uint32_t k = 0; k<4; ++k) {
-      std::reverse(bc.peak[k].begin(), bc.peak[k].end());
-      std::reverse(bc.pos[k].begin(), bc.pos[k].end());
-    }
-  }
-
-  return true;
-}
-
 inline void
 traceTxtOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
-  uint16_t backtrim = bc.primary.size() - bc.rtrim;
-  uint32_t bcpos = 0;
-  uint16_t idx = bc.bcPos[bcpos];
+  typedef Trace::TValue TValue;
+  TValue bcpos = 0;
+  TValue idx = bc.bcPos[bcpos];
   std::ofstream rfile(outfile.c_str());
-  rfile << "pos\tpeakA\tpeakC\tpeakG\tpeakT\tbasenum\tmaxA\tmaxC\tmaxG\tmaxT\tprimary\tsecondary\tconsensus\tqual\ttrim" << std::endl;
-  for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
+  rfile << "pos\tpeakA\tpeakC\tpeakG\tpeakT\tbasenum\tprimary\tsecondary\tconsensus\tqual" << std::endl;
+  for(int32_t i = 0; i < (int32_t) tr.traceACGT[0].size(); ++i) {
     rfile << (i+1) << "\t";
     for(uint32_t k =0; k<4; ++k) rfile << tr.traceACGT[k][i] << "\t";
     if (idx == i) {
       rfile << (bcpos+1) << "\t";
-      for(uint32_t k =0; k<4; ++k) rfile << bc.peak[k][bcpos] << "\t";
-      rfile << bc.primary[bcpos] << "\t" << bc.secondary[bcpos] << "\t" << bc.consensus[bcpos] << "\t" << (int32_t) tr.qual[bcpos] << "\t";
-      if ((bcpos < bc.ltrim) || (bcpos >= backtrim)) rfile << "Y" << std::endl;
-      else rfile << "N" << std::endl;
+      rfile << bc.primary[bcpos] << "\t" << bc.secondary[bcpos] << "\t" << bc.consensus[bcpos] << "\t" << (int32_t) tr.qual[bcpos] << "\t" << std::endl;
       idx = bc.bcPos[++bcpos];
-    } else rfile << "NA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA" << std::endl;
+    } else rfile << "NA\tNA\tNA\tNA\tNA" << std::endl;
   }
 }
  
 inline void
 traceJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
+  typedef Trace::TValue TValue;
   std::ofstream rfile(outfile.c_str());
   rfile << "{" << std::endl;
   rfile << "\"pos\": [";
@@ -590,10 +420,10 @@ traceJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
   rfile << "]," << std::endl;
 
   // Basecalls
-  uint32_t bcpos = 0;
-  uint16_t idx = bc.bcPos[0];
+  TValue bcpos = 0;
+  TValue idx = bc.bcPos[0];
   rfile << "\"basecallPos\": [";
-  for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
+  for(int32_t i = 0; i < (int32_t) tr.traceACGT[0].size(); ++i) {
     if (idx == i) {
       if (i!=bc.bcPos[0]) rfile << ", ";
       rfile << (i+1);
@@ -604,7 +434,7 @@ traceJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
   bcpos = 0;
   idx = bc.bcPos[0];
   rfile << "\"primary\": [";
-  for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
+  for(int32_t i = 0; i < (int32_t) tr.traceACGT[0].size(); ++i) {
     if (idx == i) {
       if (i!=bc.bcPos[0]) rfile << ", ";
       rfile << "\"" << bc.primary[bcpos] << "\"";
@@ -615,7 +445,7 @@ traceJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
   bcpos = 0;
   idx = bc.bcPos[0];
   rfile << "\"secondary\": [";
-  for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
+  for(int32_t i = 0; i < (int32_t) tr.traceACGT[0].size(); ++i) {
     if (idx == i) {
       if (i!=bc.bcPos[0]) rfile << ", ";
       rfile << "\"" << bc.secondary[bcpos] << "\"";

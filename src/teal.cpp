@@ -63,10 +63,8 @@ int main(int argc, char** argv) {
     // Call bases
     BaseCalls bc;
     basecall(tr, bc, c.pratio);
-    if (!estimateTrim(bc)) {
-      if (!estimateTrim(bc, tr)) return -1;
-    }
 
+    // Write bases
     traceJsonOut("out.json", bc, tr);
     traceTxtOut("out.tsv", bc, tr);
   }
