@@ -81,26 +81,23 @@ _toString(TValue const a) {
   return ss.str();
 }  
  
-template<typename TMountains>
+template<typename TACGTMountains, typename TMountains>
 inline void
-findLocalMaxima(TMountains const& trace, TMountains& pos) {
-  for(uint32_t i = 1; i < trace.size() - 1; ++i) {
-    if (((trace[i-1] <= trace[i]) && (trace[i] > trace[i+1])) || ((trace[i-1] < trace[i]) && (trace[i] >= trace[i+1]))) pos.push_back(i);
-  }
-}
-
-template<typename TMountains>
-inline void
-peak(TMountains const& trace, TMountains const& maxima, float const s, float const e, typename TMountains::value_type& bestVal, typename TMountains::value_type& bestIdx) {
-  bestVal = 0;
-  bestIdx = 0;
-  for(uint32_t i = 0; i<maxima.size(); ++i) {
-    if (((float) maxima[i] > s) && ((float) maxima[i] < e)) {
-      if (trace[maxima[i]] > bestVal) {
-	bestIdx = maxima[i];
-	bestVal = trace[maxima[i]];
+peak(TACGTMountains const& trace, float const s, float const e, TMountains& pVal, TMountains& pIdx) {
+  typedef typename TMountains::value_type TValue;
+  for(uint32_t k = 0; k<4; ++k) {
+    TValue bestIdx = (int32_t) (std::floor(s)) + 1;
+    TValue bestVal = (TValue) 0;
+    for(int32_t i = std::max(1, (int32_t) std::floor(s)); i < std::min((int32_t) (trace[k].size() - 1), (int32_t) std::floor(e)); ++i) {
+      if (((trace[k][i-1] <= trace[k][i]) && (trace[k][i] > trace[k][i+1])) || ((trace[k][i-1] < trace[k][i]) && (trace[k][i] >= trace[k][i+1]))) {
+	if (trace[k][i] > bestVal) {
+	  bestIdx = (TValue) i;
+	  bestVal = (TValue) trace[k][i];
+	}
       }
     }
+    pVal.push_back(bestVal);
+    pIdx.push_back(bestIdx);
   }
 }
 
@@ -291,12 +288,9 @@ readab(std::string const& filename, Trace& tr) {
 
 inline void
 basecall(Trace const& tr, BaseCalls& bc, float sigratio) {
-  typedef Trace::TACGTMountains TACGTMountains;
-  typedef TACGTMountains::value_type TMountains;
-  typedef TMountains::value_type TValue;
-  TACGTMountains peakACGT(4, TMountains());
-  for(uint32_t k = 0; k<4; ++k) findLocalMaxima(tr.traceACGT[k], peakACGT[k]);
-
+  typedef Trace::TMountains TMountains;
+  typedef Trace::TValue TValue;
+  
   // Get peak regions
   std::vector<float> st;
   std::vector<float> ed;
@@ -315,56 +309,60 @@ basecall(Trace const& tr, BaseCalls& bc, float sigratio) {
   std::vector<char> secondary;
   std::vector<char> consensus;
   for(uint32_t i = 0; i<st.size(); ++i) {
-    TMountains pVal(4, 0);
-    TMountains pIdx(4, 0);
-    for(uint32_t k = 0; k<4; ++k) 
-      peak(tr.traceACGT[k], peakACGT[k], st[i], ed[i], pVal[k], pIdx[k]);
+    TMountains pVal;
+    TMountains pIdx;
+    peak(tr.traceACGT, st[i], ed[i], pVal, pIdx);
     if ((pVal[0] == 0) && (pVal[1] == 0) && (pVal[2] == 0) && (pVal[3] == 0)) continue;
     TValue maxVal = 0;
     for(uint32_t k = 0; k<4; ++k)
       if (pVal[k] > maxVal) maxVal = pVal[k];
-    std::vector<float> srat(4, 0);
-    float bestRat = 0;
-    TValue bestIdx = 0;
+    std::vector<float> srat;
+    for(uint32_t k = 0; k<4; ++k)
+      srat.push_back((float) pVal[k] / (float) maxVal);
+    float bestRat = sigratio;
+    int32_t selACGT = -1;
+    TValue selPos = 0;
     int32_t validBases = 0;
     for(uint32_t k = 0; k<4; ++k) {
-      srat[k] = (float) pVal[k] / (float) maxVal;
-      if (srat[k] >= sigratio) ++validBases;
-      if (srat[k] > bestRat) {
-	bestRat = srat[k];
-	bestIdx = k;
+      if (srat[k] >= sigratio) {
+	++validBases;
+	if (srat[k] >= bestRat) {
+	  bestRat = srat[k];
+	  selPos = pIdx[k];
+	  selACGT = k;
+	}
       }
     }
-    //std::cout << bc.bcPos.empty() << ',' << bc.bcPos.size() << '\t' << pIdx.size() << ',' << bestIdx << ',' << pIdx[bestIdx] << std::endl;
-    bc.bcPos.push_back(pIdx[bestIdx]);
-    if ((validBases == 4) || (validBases == 0)) {
+    //std::cout << bc.bcPos.size() << ',' << primary.size() << ',' << validBases << ',' << selPos << std::endl;
+    bc.bcPos.push_back(selPos);
+    if ((validBases == 4) || (selACGT == -1)) {
       primary.push_back('N');
       secondary.push_back('N');
       consensus.push_back('N');
     } else if (validBases > 1) {
-      if (bestIdx == 0) primary.push_back('A');
-      else if (bestIdx == 1) primary.push_back('C');
-      else if (bestIdx == 2) primary.push_back('G');
-      else if (bestIdx == 3) primary.push_back('T');
+      if (selACGT == 0) primary.push_back('A');
+      else if (selACGT == 1) primary.push_back('C');
+      else if (selACGT == 2) primary.push_back('G');
+      else if (selACGT == 3) primary.push_back('T');
       TMountains leftover;
       for(int32_t k = 0; k<4; ++k) 
-	if ((k != bestIdx) && (srat[k] >= sigratio)) leftover.push_back(k);
+	if ((k != selACGT) && (srat[k] >= sigratio)) leftover.push_back(k);
       secondary.push_back(iupac(leftover));
       consensus.push_back('N');
     } else {
-      if (bestIdx == 0) {
+      if (selACGT == 0) {
 	primary.push_back('A');
 	secondary.push_back('A');
 	consensus.push_back('A');
-      } else if (bestIdx == 1) {
+      } else if (selACGT == 1) {
 	primary.push_back('C');
 	secondary.push_back('C');
 	consensus.push_back('C');
-      } else if (bestIdx == 2) {
+      } else if (selACGT == 2) {
 	primary.push_back('G');
 	secondary.push_back('G');
 	consensus.push_back('G');
-      } else if (bestIdx == 3) {
+      } else if (selACGT == 3) {
 	primary.push_back('T');
 	secondary.push_back('T');
 	consensus.push_back('T');
@@ -379,7 +377,7 @@ basecall(Trace const& tr, BaseCalls& bc, float sigratio) {
 inline void
 traceTxtOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
   typedef Trace::TValue TValue;
-  TValue bcpos = 0;
+  uint32_t bcpos = 0;
   TValue idx = bc.bcPos[bcpos];
   std::ofstream rfile(outfile.c_str());
   rfile << "pos\tpeakA\tpeakC\tpeakG\tpeakT\tbasenum\tprimary\tsecondary\tconsensus\tqual" << std::endl;
@@ -389,7 +387,7 @@ traceTxtOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
     if (idx == i) {
       rfile << (bcpos+1) << "\t";
       rfile << bc.primary[bcpos] << "\t" << bc.secondary[bcpos] << "\t" << bc.consensus[bcpos] << "\t" << (int32_t) tr.qual[bcpos] << "\t" << std::endl;
-      idx = bc.bcPos[++bcpos];
+      if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
     } else rfile << "NA\tNA\tNA\tNA\tNA" << std::endl;
   }
 }
@@ -431,14 +429,14 @@ traceJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
   rfile << "]," << std::endl;
 
   // Basecalls
-  TValue bcpos = 0;
+  uint32_t bcpos = 0;
   TValue idx = bc.bcPos[0];
   rfile << "\"basecallPos\": [";
   for(int32_t i = 0; i < (int32_t) tr.traceACGT[0].size(); ++i) {
     if (idx == i) {
       if (i!=bc.bcPos[0]) rfile << ", ";
       rfile << (i+1);
-      idx = bc.bcPos[++bcpos];
+      if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
     }
   }
   rfile << "]," << std::endl;
@@ -449,7 +447,7 @@ traceJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
     if (idx == i) {
       if (i!=bc.bcPos[0]) rfile << ", ";
       rfile << "\"" << bc.primary[bcpos] << "\"";
-      idx = bc.bcPos[++bcpos];
+      if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
     }
   }
   rfile << "]," << std::endl;
@@ -460,7 +458,7 @@ traceJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
     if (idx == i) {
       if (i!=bc.bcPos[0]) rfile << ", ";
       rfile << "\"" << bc.secondary[bcpos] << "\"";
-      idx = bc.bcPos[++bcpos];
+      if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
     }
   }
   rfile << "]" << std::endl;
