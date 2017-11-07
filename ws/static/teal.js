@@ -27,6 +27,9 @@ function displayResults (results) {
     sectionResults.innerHTML = '<div id="chart"></div>'
     c3.generate({
 	bindto: '#chart',
+	padding: {
+	    bottom: 75,
+	},
 	data: {
 	    x: 'pos',
 	    columns: [
@@ -45,8 +48,11 @@ function displayResults (results) {
 	    x: {
 		label: "Position",
 		tick: {
+		    rotate: -90,
 		    values: results.basecallPos,
-		    format: function (x) { return ''; }
+		    format: function (x) {
+			return results.basecalls[x.toString()];
+		    }
 		},
 		extent: [1, 500]
 	    }

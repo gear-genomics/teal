@@ -475,30 +475,19 @@ traceJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr, bool co
   rfile << "]," << std::endl;
   bcpos = 0;
   idx = bc.bcPos[0];
-  rfile << "\"primary\": [";
+  rfile << "\"basecalls\": {";
   for(int32_t i = 0; i < (int32_t) tr.traceACGT[0].size(); ++i) {
     if (keep[i]) {
       if (idx == i) {
 	if (i!=bc.bcPos[0]) rfile << ", ";
-	rfile << "\"" << bc.primary[bcpos] << "\"";
+	rfile << "\"" << (i+1) << "\"" << ":" << "\"" << (bcpos+1) << ":" <<  bc.primary[bcpos];
+	if (bc.primary[bcpos] != bc.secondary[bcpos]) rfile << "|" << bc.secondary[bcpos];
+	rfile << "\"";
 	if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
       }
     }
   }
-  rfile << "]," << std::endl;
-  bcpos = 0;
-  idx = bc.bcPos[0];
-  rfile << "\"secondary\": [";
-  for(int32_t i = 0; i < (int32_t) tr.traceACGT[0].size(); ++i) {
-    if (keep[i]) {
-      if (idx == i) {
-	if (i!=bc.bcPos[0]) rfile << ", ";
-	rfile << "\"" << bc.secondary[bcpos] << "\"";
-	if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
-      }
-    }
-  }
-  rfile << "]" << std::endl;
+  rfile << "}" << std::endl;
   rfile << "}" << std::endl;
   rfile.close();
 }
