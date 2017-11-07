@@ -393,13 +393,26 @@ traceTxtOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
 }
  
 inline void
-traceJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
-
-  // Downsample vector
-  float ds = 0.25;
-  std::vector<bool> keep(tr.traceACGT[0].size(), false);
-  for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i)
-    if (i % (int) (1/ds) == 0) keep[i] = true;
+traceJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr, bool const downsample) {
+  std::vector<bool> keep;
+  if (downsample) {
+    // Downsample trace, peaks + 1 intermediate point + boundaries
+    keep.resize(tr.traceACGT[0].size(), false);
+    keep[0] = true;
+    uint32_t oldPos = 0;
+    for(uint32_t i = 0; i < bc.bcPos.size(); ++i) {
+      keep[bc.bcPos[i]] = true;
+      uint32_t intermediate = oldPos + (int) ((bc.bcPos[i] - oldPos) / 2);
+      keep[intermediate] = true;
+      oldPos = bc.bcPos[i];
+    }
+    uint32_t lastPos = tr.traceACGT[0].size() - 1;
+    uint32_t intermediate = oldPos + (int) ((lastPos - oldPos) / 2);
+    keep[intermediate] = true;
+    keep[lastPos] = true;
+  } else {
+    keep.resize(tr.traceACGT[0].size(), true);
+  }
 
   // Output trace
   typedef Trace::TValue TValue;

@@ -26,6 +26,7 @@ Contact: Tobias Rausch (rausch@embl.de)
 using namespace teal;
 
 struct Config {
+  bool downsample;
   float pratio;
   std::string version;
   std::string ab;
@@ -52,6 +53,7 @@ int main(int argc, char** argv) {
   } else {
     // Set defaults
     c.pratio = 0.33;
+    c.downsample = true;
 
     // Read *.ab1 file
     Trace tr;
@@ -62,7 +64,7 @@ int main(int argc, char** argv) {
     basecall(tr, bc, c.pratio);
 
     // Write bases
-    traceJsonOut(argv[2], bc, tr);
+    traceJsonOut(argv[2], bc, tr, c.downsample);
     //traceTxtOut("out.tsv", bc, tr);
   }
 
