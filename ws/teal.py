@@ -44,12 +44,13 @@ def generate():
 
         # Run teal
         outfile = os.path.join(sf, "teal_" + uuidstr + ".json")
+        tsvfile = os.path.join(sf, "teal_" + uuidstr + ".tsv")
         logfile = os.path.join(sf, "teal_" + uuidstr + ".log")
         errfile = os.path.join(sf, "teal_" + uuidstr + ".err")
         with open(logfile, "w") as log:
             with open(errfile, "w") as err:
                 texe = os.path.join(app.config['TEAL'], "./src/teal")
-                return_code = call([texe, fexpname, outfile], stdout=log, stderr=err)
+                return_code = call([texe, fexpname, outfile, tsvfile], stdout=log, stderr=err)
         if return_code != 0:
             return jsonify(error = "Error in running Teal!"), 500
         return jsonify(json.loads(open(outfile).read()))

@@ -24,6 +24,7 @@ function submit () {
 }
 
 function displayResults (results) {
+    console.log("results", results)
   sectionResults.innerHTML = '<div id="chart"></div>'
   c3.generate({
       bindto: '#chart',
@@ -46,7 +47,8 @@ function displayResults (results) {
 	      label: "Position",
 	      tick: {
 		  count: 1
-	      }
+	      },
+	      extent: [1, 500]
 	  }
       },
       zoom: {
