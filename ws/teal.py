@@ -17,7 +17,7 @@ TEALWS = os.path.dirname(os.path.abspath(__file__))
 app.config['TEAL'] = os.path.join(TEALWS, "..")
 app.config['UPLOAD_FOLDER'] = os.path.join(app.config['TEAL'], "data")
 app.config['MAX_CONTENT_LENGTH'] = 8 * 1024 * 1024   #maximum of 8MB
-app.config['BASEURL'] = ''
+app.config['BASEURL'] = '/teal'
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in set(['ab1'])
@@ -63,4 +63,12 @@ def root():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=3300, debug=True, threaded=True)
+    parser = argparse.ArgumentParser(description='Teal App')
+    parser.add_argument('-b', '--baseurl', type=str, required=False, default="", metavar="", dest='baseurl', help='baseurl')
+    parser.add_argument('-d', '--debug', required=False, default=False, action='store_true', dest='debug', help='debug mode')
+    parser.add_argument('-t', '--threaded', required=False, default=False, action='store_true', dest='threaded', help='threaded')
+    parser.add_argument('-s', '--host', type=str, required=False, default="0.0.0.0", metavar="0.0.0.0", dest='host', help='host')
+    parser.add_argument('-p', '--port', type=int, required=False, default=3300, metavar="3300", dest='port', help='port')
+    args = parser.parse_args()
+    app.config['BASEURL'] = args.baseurl
+    app.run(host = args.host, port = args.port, debug = args.debug, threaded= args.threaded)
