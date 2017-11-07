@@ -3,26 +3,29 @@
 var submitButton = document.getElementById('submit-button')
 submitButton.addEventListener('click', submit)
 var spinnerHtml = '<i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i>'
-var resultsTemplate = document.getElementById('tmpl-results').innerHTML
-Mustache.parse(resultsTemplate)
+var sectionResults = document.getElementById('results')
 
 function submit () {
     var file = document.getElementById('experiment').files[0];
     var data = new FormData();
     data.append('experiment', file);
     var req = new XMLHttpRequest()
-    req.addEventListener('load', displayResults)
+    req.addEventListener('load', function (ev) {
+      var res = JSON.parse(ev.target.response)
+      if (ev.target.status === 200) {
+        displayResults(res)
+      } else {
+        sectionResults.innerHTML = '<div class="error">' + res.error + '</div>'
+      }
+    })
     req.open('POST', '/upload', true)
     req.send(data)
-    document.getElementById('results').innerHTML = spinnerHtml
+    sectionResults.innerHTML = spinnerHtml
 }
 
-function displayResults () {
-    var results = JSON.parse(this.responseText)
-    console.log("results: ", results)
-    var resultsRendered = Mustache.render(resultsTemplate, results)
-    document.getElementById('results').innerHTML = resultsRendered
-    c3.generate({
+function displayResults (results) {
+  sectionResults.innerHTML = '<div id="chart"></div>'
+  c3.generate({
 	bindto: '#chart',
 	data: {
 	    columns: [

@@ -33,12 +33,12 @@ def generate():
             os.makedirs(sf)
         
         if 'experiment' not in request.files:
-            return jsonify(error = "Experiment file missing!")
+            return jsonify(error = "Experiment file missing!"), 400
         fexp = request.files['experiment']
         if fexp.filename == '':
-            return jsonify(error = "Experiment file missing!")
+            return jsonify(error = "Experiment file missing!"), 400
         if not allowed_file(fexp.filename):
-            return jsonify(error = "Experiment file has incorrect file type!")
+            return jsonify(error = "Experiment file has incorrect file type!"), 400
         fexpname = os.path.join(sf, "teal_" + uuidstr + "_" + secure_filename(fexp.filename))
         fexp.save(fexpname)
 
@@ -51,7 +51,7 @@ def generate():
                 texe = os.path.join(app.config['TEAL'], "./src/teal")
                 return_code = call([texe, fexpname, outfile], stdout=log, stderr=err)
         if return_code != 0:
-            return jsonify(error = "Error in running Teal!")
+            return jsonify(error = "Error in running Teal!"), 500
         return jsonify(json.loads(open(outfile).read()))
     return render_template('index.html', baseurl = app.config['BASEURL'])
 

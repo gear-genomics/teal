@@ -20,3 +20,8 @@ button.is-primary.is-primary:hover {
 #chart {
   margin-top: 20px;
 }
+
+.error {
+  font-weight: bold;
+  color: red;
+}
