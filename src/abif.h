@@ -394,37 +394,55 @@ traceTxtOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
  
 inline void
 traceJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
+
+  // Downsample vector
+  float ds = 0.25;
+  std::vector<bool> keep(tr.traceACGT[0].size(), false);
+  for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i)
+    if (i % (int) (1/ds) == 0) keep[i] = true;
+
+  // Output trace
   typedef Trace::TValue TValue;
   std::ofstream rfile(outfile.c_str());
   rfile << "{" << std::endl;
   rfile << "\"pos\": [";
   for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
-    if (i!=0) rfile << ", ";
-    rfile << (i+1);
+    if (keep[i]) {
+      if (i!=0) rfile << ", ";
+      rfile << (i+1);
+    }
   }
   rfile << "]," << std::endl;
   rfile << "\"peakA\": [";
   for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
-    if (i!=0) rfile << ", ";
-    rfile << tr.traceACGT[0][i];
+    if (keep[i]) {
+      if (i!=0) rfile << ", ";
+      rfile << tr.traceACGT[0][i];
+    }
   }
   rfile << "]," << std::endl;
   rfile << "\"peakC\": [";
   for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
-    if (i!=0) rfile << ", ";
-    rfile << tr.traceACGT[1][i];
+    if (keep[i]) {
+      if (i!=0) rfile << ", ";
+      rfile << tr.traceACGT[1][i];
+    }
   }
   rfile << "]," << std::endl;
   rfile << "\"peakG\": [";
   for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
-    if (i!=0) rfile << ", ";
-    rfile << tr.traceACGT[2][i];
+    if (keep[i]) {
+      if (i!=0) rfile << ", ";
+      rfile << tr.traceACGT[2][i];
+    }
   }
   rfile << "]," << std::endl;
   rfile << "\"peakT\": [";
   for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
-    if (i!=0) rfile << ", ";
-    rfile << tr.traceACGT[3][i];
+    if (keep[i]) {
+      if (i!=0) rfile << ", ";
+      rfile << tr.traceACGT[3][i];
+    }
   }
   rfile << "]," << std::endl;
 
@@ -433,10 +451,12 @@ traceJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
   TValue idx = bc.bcPos[0];
   rfile << "\"basecallPos\": [";
   for(int32_t i = 0; i < (int32_t) tr.traceACGT[0].size(); ++i) {
-    if (idx == i) {
-      if (i!=bc.bcPos[0]) rfile << ", ";
-      rfile << (i+1);
-      if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
+    if (keep[i]) {
+      if (idx == i) {
+	if (i!=bc.bcPos[0]) rfile << ", ";
+	rfile << (i+1);
+	if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
+      }
     }
   }
   rfile << "]," << std::endl;
@@ -444,10 +464,12 @@ traceJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
   idx = bc.bcPos[0];
   rfile << "\"primary\": [";
   for(int32_t i = 0; i < (int32_t) tr.traceACGT[0].size(); ++i) {
-    if (idx == i) {
-      if (i!=bc.bcPos[0]) rfile << ", ";
-      rfile << "\"" << bc.primary[bcpos] << "\"";
-      if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
+    if (keep[i]) {
+      if (idx == i) {
+	if (i!=bc.bcPos[0]) rfile << ", ";
+	rfile << "\"" << bc.primary[bcpos] << "\"";
+	if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
+      }
     }
   }
   rfile << "]," << std::endl;
@@ -455,10 +477,12 @@ traceJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
   idx = bc.bcPos[0];
   rfile << "\"secondary\": [";
   for(int32_t i = 0; i < (int32_t) tr.traceACGT[0].size(); ++i) {
-    if (idx == i) {
-      if (i!=bc.bcPos[0]) rfile << ", ";
-      rfile << "\"" << bc.secondary[bcpos] << "\"";
-      if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
+    if (keep[i]) {
+      if (idx == i) {
+	if (i!=bc.bcPos[0]) rfile << ", ";
+	rfile << "\"" << bc.secondary[bcpos] << "\"";
+	if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
+      }
     }
   }
   rfile << "]" << std::endl;

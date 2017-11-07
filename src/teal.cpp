@@ -35,24 +35,21 @@ struct Config {
 inline void
 displayUsage(char** argv, std::string const& version) {
   std::cout << "Teal v" << version << std::endl;
-  std::cout << "Usage: " << argv[0] << " trace.ab1" << std::endl;
+  std::cout << "Usage: " << argv[0] << " trace.ab1 out.json" << std::endl;
   std::cout << std::endl;
 }
 
 int main(int argc, char** argv) {
   Config c;
-  c.version = "0.0.1";
+  c.version = "0.0.2";
 
-  if (argc < 2) {
+  if (argc < 3) {
     displayUsage(argv, c.version);
-  }
-  else  if ((std::string(argv[1]) == "version") || (std::string(argv[1]) == "--version") || (std::string(argv[1]) == "--version-only") || (std::string(argv[1]) == "-v")) {
+  } else  if ((std::string(argv[1]) == "version") || (std::string(argv[1]) == "--version") || (std::string(argv[1]) == "--version-only") || (std::string(argv[1]) == "-v")) {
     std::cout << "Teal v" << c.version << std::endl;
-  }
-  else if ((std::string(argv[1]) == "help") || (std::string(argv[1]) == "--help") || (std::string(argv[1]) == "-h") || (std::string(argv[1]) == "-?")) {
+  } else if ((std::string(argv[1]) == "help") || (std::string(argv[1]) == "--help") || (std::string(argv[1]) == "-h") || (std::string(argv[1]) == "-?")) {
     displayUsage(argv, c.version);
-  }
-  else {
+  } else {
     // Set defaults
     c.pratio = 0.33;
 
@@ -65,8 +62,8 @@ int main(int argc, char** argv) {
     basecall(tr, bc, c.pratio);
 
     // Write bases
-    traceJsonOut("out.json", bc, tr);
-    traceTxtOut("out.tsv", bc, tr);
+    traceJsonOut(argv[2], bc, tr);
+    //traceTxtOut("out.tsv", bc, tr);
   }
 
   return 0;
