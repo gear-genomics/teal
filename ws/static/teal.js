@@ -26,30 +26,31 @@ function submit () {
 function displayResults (results) {
   sectionResults.innerHTML = '<div id="chart"></div>'
   c3.generate({
-	bindto: '#chart',
-	data: {
-	    columns: [
-		['A'].concat(results.peakA),
-		['C'].concat(results.peakC),
-		['G'].concat(results.peakG),
-		['T'].concat(results.peakT)
-	    ],
-	    type: "spline",
-	},
-	point: {
-	    show: false
-	},
-	axis: {
-	    x: {
-		label: "Position",
-		tick: {
-		    count: 1
-		},
-		extent: [1, 500]
-	    }
-	},
-	zoom: {
-	    enabled: true
-	}
-    })
+      bindto: '#chart',
+      data: {
+	  x: 'pos',
+	  columns: [
+	      ['pos'].concat(results.pos),
+	      ['A'].concat(results.peakA),
+	      ['C'].concat(results.peakC),
+	      ['G'].concat(results.peakG),
+	      ['T'].concat(results.peakT)
+	  ],
+	  type: "spline",
+      },
+      point: {
+	  show: false
+      },
+      axis: {
+	  x: {
+	      label: "Position",
+	      tick: {
+		  count: 1
+	      }
+	  }
+      },
+      zoom: {
+	  enabled: true
+      }
+  })
 }
