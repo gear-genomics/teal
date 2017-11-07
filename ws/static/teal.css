@@ -1,0 +1,22 @@
+.is-primary.is-primary,
+button.is-primary.is-primary:hover {
+  background-color: #38b4f7;
+}
+
+.control input,
+.control select {
+  width: 150px;
+}
+
+.section--results {
+  padding-top: 10px;
+}
+
+.section--results pre {
+  white-space: pre-line;
+  padding: 10px;
+}
+
+#chart {
+  margin-top: 20px;
+}
