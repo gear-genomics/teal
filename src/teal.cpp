@@ -43,6 +43,7 @@ displayUsage(char** argv, std::string const& version) {
 int main(int argc, char** argv) {
   Config c;
   c.version = "0.0.2";
+  c.downsample = false;
 
   if (argc < 4) {
     displayUsage(argv, c.version);
@@ -53,7 +54,6 @@ int main(int argc, char** argv) {
   } else {
     // Set defaults
     c.pratio = 0.33;
-    c.downsample = true;
 
     // Read *.ab1 file
     Trace tr;
