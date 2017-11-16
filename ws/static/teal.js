@@ -22,7 +22,6 @@ navFwWinButton.addEventListener('click', tealNavFwWin)
 
 var spinnerHtml = '<i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i>'
 var sectionResults = document.getElementById('results')
-var sectionResults2 = document.getElementById('results2')
 
 var tealWinXst = 0;
 var tealWinXend = 600;
@@ -111,8 +110,10 @@ function submit () {
     req.addEventListener('load', function (ev) {
       var res = JSON.parse(ev.target.response)
       if (ev.target.status === 200) {
-//        displayResults(res)
-        displayResults2(res)
+        tealWinXst = 0;
+        tealWinXend = 600;
+        tealWinYend = 2300;
+        displayResults(res)
       } else {
         sectionResults.innerHTML = '<div class="error">' + res.error + '</div>'
       }
@@ -120,50 +121,9 @@ function submit () {
     req.open('POST', '/upload', true)
     req.send(data)
     sectionResults.innerHTML = spinnerHtml
-    sectionResults2.innerHTML = spinnerHtml
 }
 
 function displayResults (results) {
-    sectionResults.innerHTML = '<div id="chart"></div>'
-    c3.generate({
-	bindto: '#chart',
-	padding: {
-	    bottom: 75,
-	},
-	data: {
-	    x: 'pos',
-	    columns: [
-		['pos'].concat(results.pos),
-		['A'].concat(results.peakA),
-		['C'].concat(results.peakC),
-		['G'].concat(results.peakG),
-		['T'].concat(results.peakT)
-	    ],
-	    type: "spline",
-	},
-	point: {
-	    show: false
-	},
-	axis: {
-	    x: {
-		label: "Position",
-		tick: {
-		    rotate: -90,
-		    values: results.basecallPos,
-		    format: function (x) {
-			return results.basecalls[x.toString()];
-		    }
-		},
-		extent: [1, 500]
-	    }
-	},
-	zoom: {
-	    enabled: true
-	}
-    })
-}
-
-function displayResults2 (results) {
     tealAllResults = results;
     var retVal = tealCreateSVG(tealAllResults,tealWinXst,tealWinXend,tealWinYend,0,1000,0,200);
     tealDigShowSVG(retVal, 1200, 500);
@@ -179,7 +139,7 @@ function tealDigShowSVG(svg, x, y) {
     retVal = retVal.replace(regEx3, "%23");
     retVal = '<img src="data:image/svg+xml,' + retVal;
     retVal += '" alt="Digest-SVG" width="' + x + '" height="' + y +'">';
-    sectionResults2.innerHTML = retVal;
+    sectionResults.innerHTML = retVal;
 }
 
 function tealCreateSVG(tr,startX,endX,endY,wdXst,wdXend,wdYst,wdYend) {
