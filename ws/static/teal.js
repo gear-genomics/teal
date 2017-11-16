@@ -179,19 +179,8 @@ function tealCreateAllCalls(tr,startX,endX,endY,wdXst,wdXend,wdYst,wdYend){
 
 function tealCreateOneCalls(trace,col,startX,endX,endY,wdXst,wdXend,wdYst,wdYend){
     var retVal = "<polyline fill='none' stroke-linejoin='round' stroke='" + col + "' points='";
- if (0) {
-    var bla = 0;
-    for (var i = 0; i < trace.length ; i++) {
-       if(trace.includes(i)){
-           bla++;
-       } else {
-           alert(i + " is " + trace[i]);
-       }
-    }
-    alert(bla + " - " + trace.length);
-}
     for (var i = startX; i < endX; i++) {
- //       if(trace.includes(i)){
+        if(!(typeof trace[i] === 'undefined')){
             var iden = parseFloat(trace[i]) / endY;
             if (iden > 1.0) {
                 iden = 1;
@@ -199,9 +188,7 @@ function tealCreateOneCalls(trace,col,startX,endX,endY,wdXst,wdXend,wdYst,wdYend
             var xPos = wdXst + (i - startX) / (endX - startX)  * (wdXend - wdXst);
             var yPos = wdYend - iden * (wdYend - wdYst);
             retVal += xPos + "," + yPos + " ";
-   //     } else {
-//            alert(i);
-     //   }
+        } 
     }
     retVal += "'/>";
     return retVal;
