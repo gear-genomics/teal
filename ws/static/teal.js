@@ -2,11 +2,23 @@
 
 var submitButton = document.getElementById('submit-button')
 submitButton.addEventListener('click', submit)
+
+var navBwWinButton = document.getElementById('teal-nav-bw-win')
+navBwWinButton.addEventListener('click', tealNavBwWin)
+var navBwBitButton = document.getElementById('teal-nav-bw-bit')
+navBwBitButton.addEventListener('click', tealNavBwBit)
+var navZoomYinButton = document.getElementById('teal-nav-zy-in')
+navZoomYinButton.addEventListener('click', tealNavZoomYin)
+var navZoomYoutButton = document.getElementById('teal-nav-zy-out')
+navZoomYoutButton.addEventListener('click', tealNavZoomYout)
+var navZoomXinButton = document.getElementById('teal-nav-zx-in')
+navZoomXinButton.addEventListener('click', tealNavZoomXin)
+var navZoomXoutButton = document.getElementById('teal-nav-zx-out')
+navZoomXoutButton.addEventListener('click', tealNavZoomXout)
 var navFwBitButton = document.getElementById('teal-nav-fw-bit')
 navFwBitButton.addEventListener('click', tealNavFwBit)
 var navFwWinButton = document.getElementById('teal-nav-fw-win')
 navFwWinButton.addEventListener('click', tealNavFwWin)
-
 
 var spinnerHtml = '<i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i>'
 var sectionResults = document.getElementById('results')
@@ -17,16 +29,76 @@ var tealWinXend = 600;
 var tealWinYend = 2300;
 var tealAllResults;
 
-function tealNavFwBit() {
-    var retVal = tealCreateSVG(tealAllResults,tealWinXst,tealWinXend,tealWinYend,0,1000,0,200);
-    tealDigShowSVG(retVal, 1200, 500);
+function tealNavBwBit() {
+    var oldStep = tealWinXend - tealWinXst;
+    var step = Math.floor(oldStep/3);
+    tealWinXst -= step;
+    tealWinXend -= step;
+    if (tealWinXst < 0) {
+        tealWinXst = 0;
+        tealWinXend = oldStep;
+    }
+    tealSVGRepaint();
 }
 
+function tealNavBwWin() {
+    var step = tealWinXend - tealWinXst;
+    tealWinXst -= step;
+    tealWinXend -= step;
+    if (tealWinXst < 0) {
+        tealWinXst = 0;
+        tealWinXend = step;
+    }
+    tealSVGRepaint();
+}
+
+function tealNavZoomYin() {
+    tealWinYend = tealWinYend * 3 / 4;
+    tealSVGRepaint();
+}
+
+function tealNavZoomYout() {
+    tealWinYend = tealWinYend * 4 / 3;
+    tealSVGRepaint();
+}
+
+function tealNavZoomXin() {
+    var oldStep = tealWinXend - tealWinXst;
+    var center = tealWinXst + oldStep / 2;
+    var step = Math.floor(oldStep * 3 / 4);
+    tealWinXst = Math.floor(center - step / 2);
+    tealWinXend = Math.floor(center + step / 2);
+    tealSVGRepaint();
+}
+
+function tealNavZoomXout() {
+    var oldStep = tealWinXend - tealWinXst;
+    var center = tealWinXst + oldStep / 2;
+    var step = Math.floor(oldStep * 4 / 3);
+    tealWinXst = Math.floor(center - step / 2);
+    tealWinXend = Math.floor(center + step / 2);
+    if (tealWinXst < 0) {
+        tealWinXst = 0;
+        tealWinXend = step;
+    }
+    tealSVGRepaint();
+}
+
+function tealNavFwBit() {
+    var step = Math.floor((tealWinXend - tealWinXst)/3);
+    tealWinXst += step;
+    tealWinXend += step;
+    tealSVGRepaint();
+}
 
 function tealNavFwWin() {
     var step = tealWinXend - tealWinXst;
     tealWinXst += step;
     tealWinXend += step;
+    tealSVGRepaint();
+}
+
+function tealSVGRepaint(){
     var retVal = tealCreateSVG(tealAllResults,tealWinXst,tealWinXend,tealWinYend,0,1000,0,200);
     tealDigShowSVG(retVal, 1200, 500);
 }
@@ -39,7 +111,7 @@ function submit () {
     req.addEventListener('load', function (ev) {
       var res = JSON.parse(ev.target.response)
       if (ev.target.status === 200) {
-        displayResults(res)
+//        displayResults(res)
         displayResults2(res)
       } else {
         sectionResults.innerHTML = '<div class="error">' + res.error + '</div>'
