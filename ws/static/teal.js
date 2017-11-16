@@ -1,4 +1,4 @@
-/* global Mustache, XMLHttpRequest, c3 */
+/* global XMLHttpRequest */
 
 var submitButton = document.getElementById('submit-button')
 submitButton.addEventListener('click', submit)
