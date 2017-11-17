@@ -19,6 +19,17 @@ var navFwBitButton = document.getElementById('teal-nav-fw-bit')
 navFwBitButton.addEventListener('click', tealNavFwBit)
 var navFwWinButton = document.getElementById('teal-nav-fw-win')
 navFwWinButton.addEventListener('click', tealNavFwWin)
+var navHiAButton = document.getElementById('teal-nav-hi-a')
+navHiAButton.addEventListener('click', tealNavHiA)
+var navHiCButton = document.getElementById('teal-nav-hi-c')
+navHiCButton.addEventListener('click', tealNavHiC)
+var navHiGButton = document.getElementById('teal-nav-hi-g')
+navHiGButton.addEventListener('click', tealNavHiG)
+var navHiTButton = document.getElementById('teal-nav-hi-t')
+navHiTButton.addEventListener('click', tealNavHiT)
+var navHiNButton = document.getElementById('teal-nav-hi-n')
+navHiNButton.addEventListener('click', tealNavHiN)
+
 
 var spinnerHtml = '<i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i>'
 var sectionResults = document.getElementById('results')
@@ -27,6 +38,43 @@ var tealWinXst = 0;
 var tealWinXend = 600;
 var tealWinYend = 2300;
 var tealAllResults;
+
+var tealBaseCol = [["green",1.5],["blue",1.5],["black",1.5],["red",1.5]];
+
+
+function tealNavFaintCol() {
+    tealBaseCol = [["#a6d3a6",1.5],["#a6a6ff",1.5],["#a6a6a6",1.5],["#ffa6a6",1.5]];
+}
+
+
+function tealNavHiN() {
+    tealBaseCol = [["green",1.5],["blue",1.5],["black",1.5],["red",1.5]];
+    tealSVGRepaint();
+}
+
+function tealNavHiA() {
+    tealNavFaintCol();
+    tealBaseCol[0] = ["green",2.5];
+    tealSVGRepaint();    
+}
+
+function tealNavHiC() {
+    tealNavFaintCol();
+    tealBaseCol[1] = ["blue",2.5];
+    tealSVGRepaint();
+}
+
+function tealNavHiG() {
+    tealNavFaintCol();
+    tealBaseCol[2] = ["black",2.5];
+    tealSVGRepaint();
+}
+
+function tealNavHiT() {
+    tealNavFaintCol();
+    tealBaseCol[3] = ["red",2.5];
+    tealSVGRepaint();
+}
 
 function tealNavBwBit() {
     var oldStep = tealWinXend - tealWinXst;
@@ -113,6 +161,7 @@ function submit () {
         tealWinXst = 0;
         tealWinXend = 600;
         tealWinYend = 2300;
+        document.getElementById("resButtons").style.display = '';
         displayResults(res)
       } else {
         sectionResults.innerHTML = '<div class="error">' + res.error + '</div>'
@@ -168,7 +217,7 @@ function tealCreateCoodinates (tr,startX,endX,endY,wdXst,wdXend,wdYst,wdYend){
             (parseFloat(tr.basecallPos[i]) < endX)) {
             var xPos = wdXst + (parseFloat(tr.basecallPos[i]) - startX) / (endX - startX)  * (wdXend - wdXst);
             retVal += "<line x1='" + xPos + "' y1='" + lineYend;
-            retVal += "' x2='" + xPos + "' y2='" + (lineYend + 7)+ "' stroke-width='1' stroke='black' />";
+            retVal += "' x2='" + xPos + "' y2='" + (lineYend + 7)+ "' stroke-width='2' stroke='black' />";
             retVal += "<text x='" + (xPos + 3) + "' y='" + (lineYend + 11);
             retVal += "' font-family='Arial' font-size='10' fill='black' text-anchor='end' transform='rotate(-90 ";
             retVal += (xPos + 3) + "," + (lineYend + 11) + ")'>";
@@ -181,7 +230,7 @@ function tealCreateCoodinates (tr,startX,endX,endY,wdXst,wdXend,wdYst,wdYend){
     for (var i = 0; i * yStep < endY; i++) {
         var yPos = wdYend - i * yStep / endY * (wdYend - wdYst);
         retVal += "<line x1='" + lineXst + "' y1='" + yPos;
-        retVal += "' x2='" + (lineXst - 7) + "' y2='" + yPos + "' stroke-width='1' stroke='black' />";
+        retVal += "' x2='" + (lineXst - 7) + "' y2='" + yPos + "' stroke-width='2' stroke='black' />";
         retVal += "<text x='" + (lineXst - 11) + "' y='" + (yPos + 3);
         retVal += "' font-family='Arial' font-size='10' fill='black' text-anchor='end'>";
         retVal += (i * yStep) + "</text>";
@@ -202,15 +251,16 @@ function tealCreateCoodinates (tr,startX,endX,endY,wdXst,wdXend,wdYst,wdYend){
 }
 
 function tealCreateAllCalls(tr,startX,endX,endY,wdXst,wdXend,wdYst,wdYend){
-    var retVal = tealCreateOneCalls(tr.peakA,"green",startX,endX,endY,wdXst,wdXend,wdYst,wdYend);
-    retVal += tealCreateOneCalls(tr.peakC,"blue",startX,endX,endY,wdXst,wdXend,wdYst,wdYend);
-    retVal += tealCreateOneCalls(tr.peakT,"red",startX,endX,endY,wdXst,wdXend,wdYst,wdYend);
-    retVal += tealCreateOneCalls(tr.peakG,"black",startX,endX,endY,wdXst,wdXend,wdYst,wdYend);
+    var retVal = tealCreateOneCalls(tr.peakA,tealBaseCol[0],startX,endX,endY,wdXst,wdXend,wdYst,wdYend);
+    retVal += tealCreateOneCalls(tr.peakC,tealBaseCol[1],startX,endX,endY,wdXst,wdXend,wdYst,wdYend);
+    retVal += tealCreateOneCalls(tr.peakG,tealBaseCol[2],startX,endX,endY,wdXst,wdXend,wdYst,wdYend);
+    retVal += tealCreateOneCalls(tr.peakT,tealBaseCol[3],startX,endX,endY,wdXst,wdXend,wdYst,wdYend);
     return retVal;
 }
 
 function tealCreateOneCalls(trace,col,startX,endX,endY,wdXst,wdXend,wdYst,wdYend){
-    var retVal = "<polyline fill='none' stroke-linejoin='round' stroke='" + col + "' points='";
+    var retVal = "<polyline fill='none' stroke-linejoin='round' stroke='" + col[0];
+    retVal += "' stroke-width='" + col[1] + "' points='";
     for (var i = startX; i < endX; i++) {
         if(!(typeof trace[i] === 'undefined')){
             var iden = parseFloat(trace[i]) / endY;
