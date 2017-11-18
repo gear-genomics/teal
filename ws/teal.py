@@ -20,7 +20,7 @@ app.config['MAX_CONTENT_LENGTH'] = 8 * 1024 * 1024   #maximum of 8MB
 app.config['BASEURL'] = '/teal'
 
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in set(['ab1'])
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in set(['abi','ab1','ab!','ab'])
 
 @app.route('/upload', methods=['GET', 'POST'])
 def generate():
