@@ -27,6 +27,9 @@ using namespace teal;
 
 struct Config {
   float pratio;
+  std::string tracein;
+  std::string jsonout;
+  std::string tsvout;
   std::string version;
   std::string ab;
 };
@@ -51,20 +54,32 @@ int main(int argc, char** argv) {
   } else {
     if (argc < 4) displayUsage(argv, c.version);
     else {
-      // Set defaults
+      // Defaults
       c.pratio = 0.33;
 
-      // Read *.ab1 file
-      Trace tr;
-      if (!readab(argv[1], tr)) return -1;
+      // Parse cmd
+      for(int32_t i = 1; i < argc; ++i) {
+	if (((std::string(argv[i]) == "-p") || (std::string(argv[i]) == "--pratio")) && (i < argc - 1)) c.pratio = ::atof(argv[++i]);
+	else {
+	  if (c.tracein.empty()) c.tracein = std::string(argv[i]);
+	  else if (c.jsonout.empty()) c.jsonout = std::string(argv[i]);
+	  else c.tsvout = std::string(argv[i]);
+	}	  
+      }
+      if ((c.tracein.empty()) || (c.jsonout.empty()) || (c.tsvout.empty())) displayUsage(argv, c.version);
+      else {
+	// Read *.ab1 file
+	Trace tr;
+	if (!readab(c.tracein, tr)) return -1;
+	
+	// Call bases
+	BaseCalls bc;
+	basecall(tr, bc, c.pratio);
 
-      // Call bases
-      BaseCalls bc;
-      basecall(tr, bc, c.pratio);
-
-      // Write bases
-      traceJsonOut(argv[2], bc, tr);
-      traceTxtOut(argv[3], bc, tr);
+	// Write bases
+	traceJsonOut(c.jsonout, bc, tr);
+	traceTxtOut(c.tsvout, bc, tr);
+      }
     }
   }
 
