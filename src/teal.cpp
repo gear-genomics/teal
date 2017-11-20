@@ -26,7 +26,6 @@ Contact: Tobias Rausch (rausch@embl.de)
 using namespace teal;
 
 struct Config {
-  bool downsample;
   float pratio;
   std::string version;
   std::string ab;
@@ -43,29 +42,30 @@ displayUsage(char** argv, std::string const& version) {
 int main(int argc, char** argv) {
   Config c;
   c.version = "0.0.2";
-  c.downsample = false;
 
-  if (argc < 4) {
-    displayUsage(argv, c.version);
-  } else  if ((std::string(argv[1]) == "version") || (std::string(argv[1]) == "--version") || (std::string(argv[1]) == "--version-only") || (std::string(argv[1]) == "-v")) {
+  if (argc < 2) displayUsage(argv, c.version);
+  else  if ((std::string(argv[1]) == "version") || (std::string(argv[1]) == "--version") || (std::string(argv[1]) == "--version-only") || (std::string(argv[1]) == "-v")) {
     std::cout << "Teal v" << c.version << std::endl;
   } else if ((std::string(argv[1]) == "help") || (std::string(argv[1]) == "--help") || (std::string(argv[1]) == "-h") || (std::string(argv[1]) == "-?")) {
     displayUsage(argv, c.version);
   } else {
-    // Set defaults
-    c.pratio = 0.33;
+    if (argc < 4) displayUsage(argv, c.version);
+    else {
+      // Set defaults
+      c.pratio = 0.33;
 
-    // Read *.ab1 file
-    Trace tr;
-    if (!readab(argv[1], tr)) return -1;
+      // Read *.ab1 file
+      Trace tr;
+      if (!readab(argv[1], tr)) return -1;
 
-    // Call bases
-    BaseCalls bc;
-    basecall(tr, bc, c.pratio);
+      // Call bases
+      BaseCalls bc;
+      basecall(tr, bc, c.pratio);
 
-    // Write bases
-    traceJsonOut(argv[2], bc, tr, c.downsample);
-    traceTxtOut(argv[3], bc, tr);
+      // Write bases
+      traceJsonOut(argv[2], bc, tr);
+      traceTxtOut(argv[3], bc, tr);
+    }
   }
 
   return 0;
