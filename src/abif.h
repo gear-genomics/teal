@@ -264,7 +264,8 @@ readab(std::string const& filename, Trace& tr) {
   bfile.close();
 
   // Fix size of basecall vectors
-  uint32_t minsize1 = std::min(tr.basecalls1.size(), tr.basecalls2.size());
+  uint32_t minsize1 = tr.basecalls1.size();
+  if (tr.basecalls2.size()) minsize1 = std::min(tr.basecalls1.size(), tr.basecalls2.size());
   uint32_t minsize2 = std::min(tr.qual.size(), tr.basecallpos.size());
   uint32_t minsize = std::min(minsize1, minsize2);
   tr.basecallpos.resize(minsize);
