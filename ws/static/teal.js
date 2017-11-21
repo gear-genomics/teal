@@ -162,6 +162,7 @@ function submit () {
         tealWinXend = 600;
         tealWinYend = 2300;
         document.getElementById("resButtons").style.display = '';
+        document.getElementById("textResults").style.display = '';
         displayResults(res)
       } else {
         sectionResults.innerHTML = '<div class="error">' + res.error + '</div>'
@@ -174,8 +175,23 @@ function submit () {
 
 function displayResults (results) {
     tealAllResults = results;
+    tealDisplayTextSeq (tealAllResults);
     var retVal = tealCreateSVG(tealAllResults,tealWinXst,tealWinXend,tealWinYend,0,1000,0,200);
     tealDigShowSVG(retVal, 1200, 500);
+}
+
+function tealDisplayTextSeq (tr) {
+    var seq = "";
+    for (var i = 0; i < tr.basecallPos.length; i++) {
+        var base = tr.basecalls[tr.basecallPos[i]] + " ";
+        var pos = base.indexOf(":");
+    //    if ((i % 60) === 0 && i != 0) {
+    //        seq += "\n";
+    //    }
+        seq += base.charAt(pos + 1);
+    }
+    var outField = document.getElementById('teal-fastaText')
+    outField.value = seq;
 }
 
 function tealDigShowSVG(svg, x, y) {
@@ -192,7 +208,7 @@ function tealDigShowSVG(svg, x, y) {
 }
 
 function tealCreateSVG(tr,startX,endX,endY,wdXst,wdXend,wdYst,wdYend) {
-    var retVal = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='-100 -100 1200 1200'>";
+    var retVal = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='-50 -50 1100 350'>";
 
     retVal += tealCreateAllCalls(tr,startX,endX,endY,wdXst,wdXend,wdYst,wdYend);
     retVal += tealCreateCoodinates (tr,startX,endX,endY,wdXst,wdXend,wdYst,wdYend);
