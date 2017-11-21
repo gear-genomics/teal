@@ -392,13 +392,12 @@ traceTxtOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
     } else rfile << "NA\tNA\tNA\tNA\tNA" << std::endl;
   }
 }
- 
+
+template<typename TStream>
 inline void
-traceJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
-  // Output trace
+_traceJsonOut(TStream& rfile, BaseCalls& bc, Trace const& tr) {
   typedef Trace::TValue TValue;
-  std::ofstream rfile(outfile.c_str());
-  rfile << "{" << std::endl;
+
   rfile << "\"pos\": [";
   for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
     if (i!=0) rfile << ", ";
@@ -455,10 +454,18 @@ traceJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
     }
   }
   rfile << "}" << std::endl;
-  rfile << "}" << std::endl;
-  rfile.close();
 }
- 
+   
+inline void
+traceJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
+  // Output trace
+  std::ofstream rfile(outfile.c_str());
+  rfile << "{" << std::endl;
+  _traceJsonOut(rfile, bc, tr);
+  rfile << "}" << std::endl;
+  rfile.close();  
+}
+
 
 }
 
