@@ -32,13 +32,15 @@
 	      </label>
 	  </p>
 	  <p class="control">
-	      <button id="submit-button" class="button is-primary">Submit</button><br />
+	      <button id="submit-button" class="button is-primary">Submit</button>
+              <button id="sample-button" class="button is-secondary">Load Sample Data</button>
+              <button id="help-button" class="button is-secondary">Help</button><br />
 	  </p>
       </div>
   </section>
   <section class="section section--results">
       <div class="container">
-	  <h2>Results</h2>
+	  <h2 id="resHeading">Help</h2>
 	  <hr>
           <div id="resButtons" style="display:none;">
            <button id="teal-nav-bw-win" class="button is-secondary">prev</button>
@@ -56,14 +58,27 @@
            <button id="teal-nav-hi-t" class="button is-secondary"><strong>T</strong></button>
            <button id="teal-nav-hi-n" class="button is-secondary">ACGT</button>
           </div>
-          <div id="results"></div>
+          <div id="results" style="display:none;"></div>
           <div id="textResults" style="display:none;">
             <hr>
             <p>Chromatogram Sequence:</p> 
-            <textarea class="form-control" id="teal-fastaText" name="teal-fastaText" rows="7" cols="110"></textarea>
+            <textarea class="form-control" id="teal-fastaText" name="teal-fastaText" rows="7" cols="110"></textarea><br />
+            <br />
           </div>
       </div>
   </section>
+
+  <footer>
+    <a href="/terms" target="_blank">Terms of Use</a>
+    &middot;
+    <a href="/contact" target="_blank">Contact Us</a>
+    &middot;
+    <a href="https://github.com/gear-genomics" target="_blank">
+    <i class="fa fa-github" aria-hidden="true"></i> Source Code
+    </a>
+    <img src="https://gear.embl.de/_nuxt/img/EMBL_logo.b1a1c94.svg" alt="EMBL logo">
+    <div style="float: right; margin-right: 10px;">Hosted with <span class="embl-red">♥</span> by</div>
+  </footer>
 
   <script src="{{ baseurl }}/static/teal.js"></script>
 </body>

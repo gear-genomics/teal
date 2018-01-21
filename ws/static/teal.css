@@ -1,11 +1,11 @@
 .is-primary.is-primary,
 button.is-primary.is-primary:hover {
-  background-color: #38b4f7;
+  background-color: #008080;
 }
 
 .control input,
 .control select {
-  width: 150px;
+  width: 250px;
 }
 
 .section--results {
@@ -25,3 +25,32 @@ button.is-primary.is-primary:hover {
   font-weight: bold;
   color: red;
 }
+
+footer {
+  position:fixed;
+  bottom:0;
+  color: black;
+  background-color: #008080;
+  border-top:1px solid #f0f0f0;
+  height:50px;
+  line-height:50px;
+  width:100%;
+  padding:0 20px
+}
+footer>img {
+  float:right;
+  height:70%;
+  position:relative;
+  top:50%;
+  -webkit-transform:translateY(-50%);
+  transform:translateY(-50%)
+}
+footer>a {
+  text-decoration:none;
+  color:inherit
+}
+
+.embl-red {
+  color:#e2001a
+}
+

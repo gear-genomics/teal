@@ -2,6 +2,10 @@
 
 var submitButton = document.getElementById('submit-button')
 submitButton.addEventListener('click', submit)
+var sampleButton = document.getElementById('sample-button')
+sampleButton.addEventListener('click', sampleData)
+var helpButton = document.getElementById('help-button')
+helpButton.addEventListener('click', toggleResultsHelp)
 
 var navBwWinButton = document.getElementById('teal-nav-bw-win')
 navBwWinButton.addEventListener('click', tealNavBwWin)
@@ -33,6 +37,7 @@ navHiNButton.addEventListener('click', tealNavHiN)
 
 var spinnerHtml = '<i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i>'
 var sectionResults = document.getElementById('results')
+var resHelp = -1;
 
 var tealWinXst = 0;
 var tealWinXend = 600;
@@ -151,9 +156,22 @@ function tealSVGRepaint(){
 }
 
 function submit () {
+    document.getElementById('teal-fastaText').value = "";
     var file = document.getElementById('experiment').files[0];
     var data = new FormData();
+    data.append('sample', 'no');
     data.append('experiment', file);
+    doSubmit (data);
+}
+
+function sampleData () {
+    var data = new FormData();
+    data.append('sample', 'sample');
+    doSubmit (data);
+}
+
+function doSubmit (data) {
+    document.getElementById('teal-fastaText').value = "";
     var req = new XMLHttpRequest()
     req.addEventListener('load', function (ev) {
       var res = JSON.parse(ev.target.response)
@@ -161,12 +179,12 @@ function submit () {
         tealWinXst = 0;
         tealWinXend = 600;
         tealWinYend = 2300;
-        document.getElementById("resButtons").style.display = '';
-        document.getElementById("textResults").style.display = '';
         displayResults(res)
       } else {
-        sectionResults.innerHTML = '<div class="error">' + res.error + '</div>'
+        sectionResults.innerHTML = '<br /><div class="error">' + res.error + '</div><br />'
       }
+      resHelp = 0;
+      toggleResultsHelp();
     })
     req.open('POST', '/upload', true)
     req.send(data)
@@ -178,6 +196,27 @@ function displayResults (results) {
     tealDisplayTextSeq (tealAllResults);
     var retVal = tealCreateSVG(tealAllResults,tealWinXst,tealWinXend,tealWinYend,0,1000,0,200);
     tealDigShowSVG(retVal, 1200, 500);
+}
+
+function toggleResultsHelp (strange) {
+    if (resHelp == -1) {
+        return;
+    }
+    if (resHelp == 0) {
+        document.getElementById("resHeading").innerText = "Results";
+        document.getElementById("help-button").innerText = "Show Help";
+        document.getElementById("resButtons").style.display = '';
+        document.getElementById("results").style.display = '';
+        document.getElementById("textResults").style.display = '';
+        resHelp = 1;
+    } else {
+        document.getElementById("resHeading").innerText = "Help";
+        document.getElementById("help-button").innerText = "Show Results";
+        document.getElementById("resButtons").style.display = 'none';
+        document.getElementById("results").style.display = 'none';
+        document.getElementById("textResults").style.display = 'none';
+        resHelp = 0;
+    }
 }
 
 function tealDisplayTextSeq (tr) {

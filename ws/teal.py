@@ -31,16 +31,19 @@ def generate():
         sf = os.path.join(app.config['UPLOAD_FOLDER'], uuidstr[0:2])
         if not os.path.exists(sf):
             os.makedirs(sf)
-        
-        if 'experiment' not in request.files:
-            return jsonify(error = "Experiment file missing!"), 400
-        fexp = request.files['experiment']
-        if fexp.filename == '':
-            return jsonify(error = "Experiment file missing!"), 400
-        if not allowed_file(fexp.filename):
-            return jsonify(error = "Experiment file has incorrect file type!"), 400
-        fexpname = os.path.join(sf, "teal_" + uuidstr + "_" + secure_filename(fexp.filename))
-        fexp.save(fexpname)
+       
+        if request.form['sample'] == 'sample':
+            fexpname = os.path.join(TEALWS, "static" , "sample.abi")
+        else:
+            if 'experiment' not in request.files:
+                return jsonify(error = "Experiment file missing!"), 400
+            fexp = request.files['experiment']
+            if fexp.filename == '':
+                return jsonify(error = "Experiment file missing!"), 400
+            if not allowed_file(fexp.filename):
+                return jsonify(error = "Experiment file has incorrect file type!"), 400
+            fexpname = os.path.join(sf, "teal_" + uuidstr + "_" + secure_filename(fexp.filename))
+            fexp.save(fexpname)
 
         # Run teal
         outfile = os.path.join(sf, "teal_" + uuidstr + ".json")
