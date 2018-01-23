@@ -208,6 +208,7 @@ function toggleResultsHelp (strange) {
         document.getElementById("resButtons").style.display = '';
         document.getElementById("results").style.display = '';
         document.getElementById("textResults").style.display = '';
+        document.getElementById("helpSection").style.display = 'none';
         resHelp = 1;
     } else {
         document.getElementById("resHeading").innerText = "Help";
@@ -215,6 +216,7 @@ function toggleResultsHelp (strange) {
         document.getElementById("resButtons").style.display = 'none';
         document.getElementById("results").style.display = 'none';
         document.getElementById("textResults").style.display = 'none';
+        document.getElementById("helpSection").style.display = '';
         resHelp = 0;
     }
 }
