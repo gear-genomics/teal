@@ -1,11 +1,13 @@
 /* global XMLHttpRequest */
 
-var submitButton = document.getElementById('submit-button')
+var submitButton = document.getElementById('btn-submit')
 submitButton.addEventListener('click', submit)
-var sampleButton = document.getElementById('sample-button')
+var sampleButton = document.getElementById('btn-example')
 sampleButton.addEventListener('click', sampleData)
-var helpButton = document.getElementById('help-button')
-helpButton.addEventListener('click', toggleResultsHelp)
+var helpButton = document.getElementById('btn-help')
+helpButton.addEventListener('click', goToHelp)
+const resultLink = document.getElementById('link-results')
+const helpLink = document.getElementById('link-help')
 
 var navBwWinButton = document.getElementById('teal-nav-bw-win')
 navBwWinButton.addEventListener('click', tealNavBwWin)
@@ -34,6 +36,10 @@ navHiTButton.addEventListener('click', tealNavHiT)
 var navHiNButton = document.getElementById('teal-nav-hi-n')
 navHiNButton.addEventListener('click', tealNavHiN)
 
+$('#mainTab a').on('click', function (e) {
+  e.preventDefault()
+  $(this).tab('show')
+})
 
 var spinnerHtml = '<i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i>'
 var sectionResults = document.getElementById('results')
@@ -152,7 +158,7 @@ function tealNavFwWin() {
 
 function tealSVGRepaint(){
     var retVal = tealCreateSVG(tealAllResults,tealWinXst,tealWinXend,tealWinYend,0,1000,0,200);
-    tealDigShowSVG(retVal, 1200, 500);
+    tealDigShowSVG(retVal, 1200, 380);
 }
 
 function submit () {
@@ -170,6 +176,11 @@ function sampleData () {
     doSubmit (data);
 }
 
+function goToHelp() {
+    helpLink.click();
+}
+
+
 function doSubmit (data) {
     document.getElementById('teal-fastaText').value = "";
     var req = new XMLHttpRequest()
@@ -185,6 +196,7 @@ function doSubmit (data) {
       }
       resHelp = 0;
       toggleResultsHelp();
+      resultLink.click();
     })
     req.open('POST', '/upload', true)
     req.send(data)
@@ -195,7 +207,7 @@ function displayResults (results) {
     tealAllResults = results;
     tealDisplayTextSeq (tealAllResults);
     var retVal = tealCreateSVG(tealAllResults,tealWinXst,tealWinXend,tealWinYend,0,1000,0,200);
-    tealDigShowSVG(retVal, 1200, 500);
+    tealDigShowSVG(retVal, 1200, 380);
 }
 
 function toggleResultsHelp (strange) {
@@ -203,20 +215,14 @@ function toggleResultsHelp (strange) {
         return;
     }
     if (resHelp == 0) {
-        document.getElementById("resHeading").innerText = "Results";
-        document.getElementById("help-button").innerText = "Show Help";
         document.getElementById("resButtons").style.display = '';
         document.getElementById("results").style.display = '';
         document.getElementById("textResults").style.display = '';
-        document.getElementById("helpSection").style.display = 'none';
         resHelp = 1;
     } else {
-        document.getElementById("resHeading").innerText = "Help";
-        document.getElementById("help-button").innerText = "Show Results";
         document.getElementById("resButtons").style.display = 'none';
         document.getElementById("results").style.display = 'none';
         document.getElementById("textResults").style.display = 'none';
-        document.getElementById("helpSection").style.display = '';
         resHelp = 0;
     }
 }

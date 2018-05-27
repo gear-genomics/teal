@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>teal: trace analysis viewer | GEAR</title>
+  <meta name="description" content="Visualize trace files.">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.6/css/all.css">
+  <link rel="stylesheet" href="{{ baseurl }}/static/css/gear.css">
+  <link rel="stylesheet" href="{{ baseurl }}/static/css/teal.css">
+</head>
+
+<body>
+
+  <header class="px-0 py-4">
+    <div class="container">
+      <h1 class="display-4 app-name">teal</h1>
+        <p class="lead">Visualize trace files.</p>
+        <!--<a class="plain" href="" target="_blank">
+          <i class="fas fa-book"></i> Docs
+        </a>
+        ·-->
+        <a class="plain" href="https://www-db.embl.de/EMBLPersonGroup-PersonPicture/MailForm/?recipient=ggenomics" target="_blank">
+          <i class="fas fa-question"></i> Get help
+        </a>
+        ·
+        <a class="plain" target="_blank" href="https://github.com/gear-genomics/teal">
+          <i class="fab fa-github-alt"></i> Source
+        </a>
+    </div>
+  </header>
+
+  <main class="container">
+    <ul class="nav nav-fill mb-2" id="mainTab">
+      <li class="nav-item">
+        <a class="nav-link active" href="#input-tab">Input</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#result-tab" id="link-results">Results</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#help-tab" id="link-help">Help</a>
+      </li>
+    </ul>
+    <div class="tab-content" id="main-tabs">
+      <div class="tab-pane show active" id="input-tab">
+        <div class="alert alert-light mb-2" role="alert">
+          <i class="fas fa-info-circle"></i>
+          Load trace file (abi, .ab1, .ab! or .ab)<br> 
+          <input type="file" class="btn btn-default btn-file" name="experiment" id="experiment" />
+          <br>
+          (click the <code>Load Example</code> button to view an example)
+        </div>
+        <button type="submit" class="btn btn-outline-primary" id="btn-submit">
+          <i class="fas fa-rocket" style="margin-right: 5px;"></i>
+          Launch Analysis
+        </button>
+        <button type="submit" class="btn btn-outline-primary" id="btn-example">
+          <i class="fas fa-eye" style="margin-right: 5px;"></i>
+          Load Example
+        </button>
+        <button type="submit" class="btn btn-outline-primary" id="btn-help">
+          <i class="far fa-life-ring" style="margin-right: 5px;"></i>
+          Help
+        </button>
+       </div>
+
+      <div class="tab-pane" id="result-tab">
+        <div id="resButtons" style="display:none;">
+          <button id="teal-nav-bw-win" class="btn btn-outline-secondary">prev</button>
+          <button id="teal-nav-bw-bit" class="btn btn-outline-secondary">&lt;</button>
+          <button id="teal-nav-zy-in" class="btn btn-outline-secondary">Bigger Peaks</button>
+          <button id="teal-nav-zy-out" class="btn btn-outline-secondary">Smaller Peaks</button>
+          <button id="teal-nav-zx-in" class="btn btn-outline-secondary">Zoom in</button>
+          <button id="teal-nav-zx-out" class="btn btn-outline-secondary">Zoom Out</button>
+          <button id="teal-nav-fw-bit" class="btn btn-outline-secondary">&gt;</button>
+          <button id="teal-nav-fw-win" class="btn btn-outline-secondary">next</button>
+          <a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a>
+          <button id="teal-nav-hi-a" class="btn btn-outline-secondary"><strong>A</strong></button>
+          <button id="teal-nav-hi-c" class="btn btn-outline-secondary"><strong>C</strong></button>
+          <button id="teal-nav-hi-g" class="btn btn-outline-secondary"><strong>G</strong></button>
+          <button id="teal-nav-hi-t" class="btn btn-outline-secondary"><strong>T</strong></button>
+          <button id="teal-nav-hi-n" class="btn btn-outline-secondary">ACGT</button>
+        </div>
+        <div id="results" style="display:none;"></div>
+        <div id="textResults" style="display:none;">
+          <hr>
+          <p>Chromatogram Sequence:</p>
+          <textarea class="form-control" id="teal-fastaText" name="teal-fastaText" rows="7" cols="110"></textarea><br />
+          <br />
+        </div>
+      </div>
+
+      <div class="tab-pane" id="help-tab">
+        <p>Teal is a tool to view sanger trace files. It supports *.abi, *.ab,
+           *.ab1 and *.ab files. Just select a file and hit submit.<br />
+           Alternatively load the sample data
+           <a href="static/sample.abi">(click to download file)</a>
+           by hitting the button and try the functionality.</p>
+           <img src="static/img/teal_explain.jpg" alt="Screenshot with comments">
+        </p>
+      </div>
+
+    </div>
+  </main>
+
+
+<!--
+
+
+  <section class="section">
+      <div class="container">
+	  <p class="control">
+	      <label for="experiment">Experiment Chromatogram (abi, .ab1, .ab! or .ab)</label>
+	      <br>
+	      <label class="btn btn-default btn-file">
+		  <input type="file" name="experiment" id="experiment" />
+	      </label>
+	  </p>
+	  <p class="control">
+	      <button id="submit-button" class="button is-primary">Submit</button>
+              <button id="sample-button" class="button is-secondary">Load Sample Data</button>
+              <button id="help-button" class="button is-secondary">Help</button><br />
+	  </p>
+      </div>
+  </section>
+  <section class="section section--results">
+      <div class="container">
+	  <h2 id="resHeading">Help</h2>
+	  <hr>
+          <div id="resButtons" style="display:none;">
+           <button id="teal-nav-bw-win" class="button is-secondary">prev</button>
+           <button id="teal-nav-bw-bit" class="button is-secondary">&lt;</button>
+           <button id="teal-nav-zy-in" class="button is-secondary">Bigger Peaks</button>
+           <button id="teal-nav-zy-out" class="button is-secondary">Smaller Peaks</button>
+           <button id="teal-nav-zx-in" class="button is-secondary">Zoom in</button>
+           <button id="teal-nav-zx-out" class="button is-secondary">Zoom Out</button>
+           <button id="teal-nav-fw-bit" class="button is-secondary">&gt;</button>
+           <button id="teal-nav-fw-win" class="button is-secondary">next</button>
+           <a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a>
+           <button id="teal-nav-hi-a" class="button is-secondary"><strong>A</strong></button>
+           <button id="teal-nav-hi-c" class="button is-secondary"><strong>C</strong></button>
+           <button id="teal-nav-hi-g" class="button is-secondary"><strong>G</strong></button>
+           <button id="teal-nav-hi-t" class="button is-secondary"><strong>T</strong></button>
+           <button id="teal-nav-hi-n" class="button is-secondary">ACGT</button>
+          </div>
+          <div id="results" style="display:none;"></div>
+          <div id="textResults" style="display:none;">
+            <hr>
+            <p>Chromatogram Sequence:</p> 
+            <textarea class="form-control" id="teal-fastaText" name="teal-fastaText" rows="7" cols="110"></textarea><br />
+            <br />
+          </div>
+          <div id="helpSection">
+            <p>Teal is a tool to view sanger trace files. It supports *.abi, *.ab,
+               *.ab1 and *.ab files. Just select a file and hit submit.<br />
+               Alternatively load the sample data 
+               <a href="static/sample.abi">(click to download file)</a>
+               by hitting the button and try the functionality.</p>
+             <img src="static/img/teal_explain.jpg" alt="Screenshot with comments">
+            <br />
+          </div>
+      </div>
+  </section>
+-->
+
+  <footer>
+    <div class="container">
+      <div class="float-left">
+        <a class="plain" target="_blank" href="https://gear.embl.de">
+          GEAR ~
+          <i class="fas fa-home"></i>
+        </a>
+        ·
+        <a class="plain" target="_blank" href="https://github.com/gear-genomics">
+          <i class="fab fa-github-alt"></i>
+        </a>
+        ·
+        <a class="plain" target="_blank" href="https://gear.embl.de/terms">
+          Terms of Use
+        </a>
+        ·
+        <a class="plain" target="_blank" href="https://gear.embl.de/contact">
+          Contact Us
+        </a>
+      </div>
+      <div class="float-right">
+        Hosted with
+        <i class="fas fa-heart embl-red"></i> by
+        <a class="plain" target="_blank" href="https://www.embl.de/">
+          <img class="footer-logo" alt="EMBL logo" src="static/img/embl.svg">
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+  <script src="{{ baseurl }}/static/js/teal.js"></script>
+
+</body>
+
+</html>
