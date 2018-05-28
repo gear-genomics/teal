@@ -184,30 +184,37 @@ function goToHelp() {
 function doSubmit (data) {
     document.getElementById('teal-fastaText').value = "";
     var req = new XMLHttpRequest()
-    req.addEventListener('load', function (ev) {
-      var res = JSON.parse(ev.target.response)
-      if (ev.target.status === 200) {
-        tealWinXst = 0;
-        tealWinXend = 600;
-        tealWinYend = 2300;
-        displayResults(res)
-      } else {
-        sectionResults.innerHTML = '<br /><div class="error">' + res.error + '</div><br />'
-      }
-      resHelp = 0;
-      toggleResultsHelp();
-      resultLink.click();
-    })
-    req.open('POST', '/upload', true)
+    req.addEventListener('load', displayResults)
+    req.open('POST', 'http://0.0.0.0:3300/upload', true)
     req.send(data)
     sectionResults.innerHTML = spinnerHtml
 }
 
-function displayResults (results) {
-    tealAllResults = results;
+function displayData(data) {
+    var res = JSON.parse(data)
+    tealAllResults = res
+    tealWinXst = 0;
+    tealWinXend = 600;
+    tealWinYend = 2300;
     tealDisplayTextSeq (tealAllResults);
     var retVal = tealCreateSVG(tealAllResults,tealWinXst,tealWinXend,tealWinYend,0,1000,0,200);
     tealDigShowSVG(retVal, 1200, 380);
+    resHelp = 0;
+    toggleResultsHelp();
+    resultLink.click();
+}
+
+function displayError(data) {
+    sectionResults.innerHTML = '<br /><div class="error">' + data.error + '</div><br />'
+}
+
+
+function displayResults() {
+    if (this.status === 200) {
+	displayData(this.response)
+    } else {
+	displayError(this.response)
+    }
 }
 
 function toggleResultsHelp (strange) {
