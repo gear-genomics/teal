@@ -192,20 +192,20 @@ function doSubmit (data) {
 
 function displayData(data) {
     var res = JSON.parse(data)
-    tealAllResults = res
+    tealAllResults = res.data
     tealWinXst = 0;
     tealWinXend = 600;
     tealWinYend = 2300;
     tealDisplayTextSeq (tealAllResults);
     var retVal = tealCreateSVG(tealAllResults,tealWinXst,tealWinXend,tealWinYend,0,1000,0,200);
     tealDigShowSVG(retVal, 1200, 380);
-    resHelp = 0;
-    toggleResultsHelp();
-    resultLink.click();
 }
 
 function displayError(data) {
-    sectionResults.innerHTML = '<br /><div class="error">' + data.error + '</div><br />'
+    var res = JSON.parse(data)
+    for (var i = 0; i < res["errors"].length; i++) {
+	sectionResults.innerHTML = '<br /><div class="error">' + res["errors"][i]['title'] + '</div><br />'
+    }
 }
 
 
@@ -215,6 +215,9 @@ function displayResults() {
     } else {
 	displayError(this.response)
     }
+    resHelp = 0;
+    toggleResultsHelp();
+    resultLink.click();
 }
 
 function toggleResultsHelp (strange) {
