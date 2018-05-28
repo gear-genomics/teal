@@ -33,7 +33,7 @@ def generate():
         os.makedirs(sf)
        
     if request.form['sample'] == 'sample':
-        fexpname = os.path.join(TEALWS, "static" , "sample.abi")
+        fexpname = os.path.join(TEALWS, "sample.abi")
     else:
         if 'experiment' not in request.files:
             return jsonify(error = "Experiment file missing!"), 400
