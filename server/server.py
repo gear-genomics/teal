@@ -36,12 +36,12 @@ def generate():
         fexpname = os.path.join(TEALWS, "sample.abi")
     else:
         if 'experiment' not in request.files:
-            return jsonify(data = {}, errors = [{"title": "Experiment file is missing!"}]), 400
+            return jsonify(errors = [{"title": "Experiment file is missing!"}]), 400
         fexp = request.files['experiment']
         if fexp.filename == '':
-            return jsonify(data = {}, errors = [{"title": "Experiment file is missing!"}]), 400
+            return jsonify(errors = [{"title": "Experiment file is missing!"}]), 400
         if not allowed_file(fexp.filename):
-            return jsonify(data = {}, errors = [{"title": "Experiment file has incorrect file type!"}]), 400 
+            return jsonify(errors = [{"title": "Experiment file has incorrect file type!"}]), 400 
         fexpname = os.path.join(sf, "teal_" + uuidstr + "_" + secure_filename(fexp.filename))
         fexp.save(fexpname)
 
@@ -55,8 +55,8 @@ def generate():
             texe = os.path.join(app.config['TEAL'], "./src/teal")
             return_code = call([texe, fexpname, outfile, tsvfile], stdout=log, stderr=err)
     if return_code != 0:
-        return jsonify(data = {}, errors = [{"title": "Error in running basecalling trace file!"}]), 400 
-    return jsonify(data = json.loads(open(outfile).read()), errors = [])
+        return jsonify(errors = [{"title": "Error in running basecalling trace file!"}]), 400 
+    return jsonify(data = json.loads(open(outfile).read()))
 
 
 if __name__ == '__main__':
