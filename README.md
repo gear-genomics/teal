@@ -15,7 +15,7 @@ Install Web Interface
 
 `sudo apt install python python-pip`
 
-`pip install flask`
+`pip install flask flask_cors`
 
 Running local
 -------------
