@@ -183,9 +183,13 @@ function goToHelp() {
 
 function doSubmit (data) {
     document.getElementById('teal-fastaText').value = "";
+    var loca = 'http://0.0.0.0:3300';
+    if (location.origin.startsWith("http")) {
+        loca = location.origin;
+    }
     var req = new XMLHttpRequest()
     req.addEventListener('load', displayResults)
-    req.open('POST', location.origin + '/upload', true)
+    req.open('POST', loca + '/upload', true)
     req.send(data)
     sectionResults.innerHTML = spinnerHtml
 }
