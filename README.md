@@ -20,6 +20,9 @@ Install Web Interface
 Running local
 -------------
 
-`python client/teal.py -b "" -dt`
+`python server/server.py`
+
+Open in Browser:
+`client/index.html`
 
 

@@ -185,7 +185,7 @@ function doSubmit (data) {
     document.getElementById('teal-fastaText').value = "";
     var req = new XMLHttpRequest()
     req.addEventListener('load', displayResults)
-    req.open('POST', 'http://0.0.0.0:3300/upload', true)
+    req.open('POST', location.origin + '/upload', true)
     req.send(data)
     sectionResults.innerHTML = spinnerHtml
 }
