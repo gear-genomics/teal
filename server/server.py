@@ -56,7 +56,10 @@ def generate():
             texe = os.path.join(app.config['TEAL'], "./src/teal")
             return_code = call([texe, fexpname, outfile, tsvfile], stdout=log, stderr=err)
     if return_code != 0:
-        return jsonify(errors = [{"title": "Error in running basecalling trace file!"}]), 400 
+        errInfo = "!"
+        with open(errfile, "r") as err:
+            errInfo = ": " + err.read()
+        return jsonify(errors = [{"title": "Error in running teal" + errInfo}]), 400
     return jsonify(data = json.loads(open(outfile).read()))
 
 @app.route('/')

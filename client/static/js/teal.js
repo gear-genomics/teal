@@ -215,12 +215,15 @@ function displayError(data) {
 
 function displayResults() {
     if (this.status === 200) {
-	displayData(this.response)
+        displayData(this.response)
+        document.getElementById("resButtons").style.display = '';
+        document.getElementById("textResults").style.display = '';
     } else {
-	displayError(this.response)
+        displayError(this.response)
+        document.getElementById("resButtons").style.display = 'none';
+        document.getElementById("textResults").style.display = 'none';
     }
     resHelp = 0;
-    toggleResultsHelp();
     resultLink.click();
 }
 

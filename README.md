@@ -23,6 +23,7 @@ Running local
 `python server/server.py`
 
 Open in Browser:
+
 `client/index.html`
 
 
