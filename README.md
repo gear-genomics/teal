@@ -15,11 +15,15 @@ Install Web Interface
 
 `sudo apt install python python-pip`
 
-`pip install flask`
+`pip install flask flask_cors`
 
 Running local
 -------------
 
-`python client/teal.py -b "" -dt`
+`python server/server.py`
+
+Open in Browser:
+
+`client/index.html`
 
 

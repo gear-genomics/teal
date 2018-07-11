@@ -7,7 +7,7 @@ import subprocess
 import argparse
 import json
 from subprocess import call
-from flask import Flask, send_file, flash, render_template, request, redirect, url_for, jsonify
+from flask import Flask, send_file, flash, send_from_directory, request, redirect, url_for, jsonify
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 
@@ -19,6 +19,7 @@ app.config['TEAL'] = os.path.join(TEALWS, "..")
 app.config['UPLOAD_FOLDER'] = os.path.join(app.config['TEAL'], "data")
 app.config['MAX_CONTENT_LENGTH'] = 8 * 1024 * 1024   #maximum of 8MB
 app.config['BASEURL'] = '/teal'
+app.static_folder = app.static_url_path = os.path.join(TEALWS, "../client/static")
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in set(['abi','ab1','ab!','ab'])
@@ -55,8 +56,15 @@ def generate():
             texe = os.path.join(app.config['TEAL'], "./src/teal")
             return_code = call([texe, fexpname, outfile, tsvfile], stdout=log, stderr=err)
     if return_code != 0:
-        return jsonify(errors = [{"title": "Error in running basecalling trace file!"}]), 400 
+        errInfo = "!"
+        with open(errfile, "r") as err:
+            errInfo = ": " + err.read()
+        return jsonify(errors = [{"title": "Error in running teal" + errInfo}]), 400
     return jsonify(data = json.loads(open(outfile).read()))
+
+@app.route('/')
+def root():
+    return send_from_directory(os.path.join(TEALWS, "../client"),"index.html"), 200
 
 
 if __name__ == '__main__':

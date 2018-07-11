@@ -183,9 +183,13 @@ function goToHelp() {
 
 function doSubmit (data) {
     document.getElementById('teal-fastaText').value = "";
+    var loca = 'http://0.0.0.0:3300';
+    if (location.origin.startsWith("http")) {
+        loca = location.origin;
+    }
     var req = new XMLHttpRequest()
     req.addEventListener('load', displayResults)
-    req.open('POST', 'http://0.0.0.0:3300/upload', true)
+    req.open('POST', loca + '/upload', true)
     req.send(data)
     sectionResults.innerHTML = spinnerHtml
 }
@@ -211,12 +215,15 @@ function displayError(data) {
 
 function displayResults() {
     if (this.status === 200) {
-	displayData(this.response)
+        displayData(this.response)
+        document.getElementById("resButtons").style.display = '';
+        document.getElementById("textResults").style.display = '';
     } else {
-	displayError(this.response)
+        displayError(this.response)
+        document.getElementById("resButtons").style.display = 'none';
+        document.getElementById("textResults").style.display = 'none';
     }
     resHelp = 0;
-    toggleResultsHelp();
     resultLink.click();
 }
 
