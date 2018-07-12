@@ -1,13 +1,96 @@
-/* global XMLHttpRequest */
+const API_URL = process.env.API_URL
 
-var submitButton = document.getElementById('btn-submit')
-submitButton.addEventListener('click', submit)
-var sampleButton = document.getElementById('btn-example')
-sampleButton.addEventListener('click', sampleData)
-var helpButton = document.getElementById('btn-help')
-helpButton.addEventListener('click', goToHelp)
+$('#mainTab a').on('click', function(e) {
+  e.preventDefault()
+  $(this).tab('show')
+})
+
 const resultLink = document.getElementById('link-results')
-const helpLink = document.getElementById('link-help')
+
+const submitButton = document.getElementById('btn-submit')
+submitButton.addEventListener('click', function() {
+  resultLink.click()
+  run()
+})
+
+const exampleButton = document.getElementById('btn-example')
+exampleButton.addEventListener('click', showExample)
+
+const inputFile = document.getElementById('inputFile')
+const resultContainer = document.getElementById('result-container')
+const resultInfo = document.getElementById('result-info')
+const resultError = document.getElementById('result-error')
+var sectionResults = document.getElementById('results')
+
+// TODO client-side validation
+function run() {
+  const formData = new FormData()
+  formData.append('queryFile', inputFile.files[0])
+  hideElement(resultContainer)
+  hideElement(resultError)
+  showElement(resultInfo)
+
+  axios
+    .post(`${API_URL}/upload`, formData)
+    .then(res => {
+	if (res.status === 200) {
+          handleSuccess(res.data)
+      }
+    })
+    .catch(err => {
+      let errorMessage = err
+      if (err.response) {
+        errorMessage = err.response.data.errors
+          .map(error => error.title)
+          .join('; ')
+      }
+      hideElement(resultInfo)
+      showElement(resultError)
+      resultError.querySelector('#error-message').textContent = errorMessage
+    })
+}
+
+async function handleSuccess(res) {
+    hideElement(resultInfo)
+    hideElement(resultError)
+    showElement(resultContainer)
+    displayData(res)
+}
+
+function showExample() {
+    resultLink.click()
+    const formData = new FormData()
+    formData.append('showExample', 'showExample')
+    hideElement(resultContainer)
+    hideElement(resultError)
+    showElement(resultInfo)
+    axios
+	.post(`${API_URL}/upload`, formData)
+	.then(res => {
+	    if (res.status === 200) {
+		handleSuccess(res.data)
+	    }
+	})
+	.catch(err => {
+	    let errorMessage = err
+	    if (err.response) {
+		errorMessage = err.response.data.errors
+		    .map(error => error.title)
+		    .join('; ')
+	    }
+	    hideElement(resultInfo)
+	    showElement(resultError)
+	    resultError.querySelector('#error-message').textContent = errorMessage
+	})
+}
+
+function showElement(element) {
+  element.classList.remove('d-none')
+}
+
+function hideElement(element) {
+  element.classList.add('d-none')
+}
 
 var navBwWinButton = document.getElementById('teal-nav-bw-win')
 navBwWinButton.addEventListener('click', tealNavBwWin)
@@ -35,15 +118,6 @@ var navHiTButton = document.getElementById('teal-nav-hi-t')
 navHiTButton.addEventListener('click', tealNavHiT)
 var navHiNButton = document.getElementById('teal-nav-hi-n')
 navHiNButton.addEventListener('click', tealNavHiN)
-
-$('#mainTab a').on('click', function (e) {
-  e.preventDefault()
-  $(this).tab('show')
-})
-
-var spinnerHtml = '<i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i>'
-var sectionResults = document.getElementById('results')
-var resHelp = -1;
 
 var tealWinXst = 0;
 var tealWinXend = 600;
@@ -161,89 +235,6 @@ function tealSVGRepaint(){
     tealDigShowSVG(retVal, 1200, 380);
 }
 
-function submit () {
-    document.getElementById('teal-fastaText').value = "";
-    var file = document.getElementById('experiment').files[0];
-    var data = new FormData();
-    data.append('sample', 'no');
-    data.append('experiment', file);
-    doSubmit (data);
-}
-
-function sampleData () {
-    var data = new FormData();
-    data.append('sample', 'sample');
-    doSubmit (data);
-}
-
-function goToHelp() {
-    helpLink.click();
-}
-
-
-function doSubmit (data) {
-    document.getElementById('teal-fastaText').value = "";
-    var loca = 'http://0.0.0.0:3300';
-    if (location.origin.startsWith("http")) {
-        loca = location.origin;
-    }
-    var req = new XMLHttpRequest()
-    req.addEventListener('load', displayResults)
-    req.open('POST', loca + '/upload', true)
-    req.send(data)
-    sectionResults.innerHTML = spinnerHtml
-}
-
-function displayData(data) {
-    var res = JSON.parse(data)
-    tealAllResults = res.data
-    tealWinXst = 0;
-    tealWinXend = 600;
-    tealWinYend = 2300;
-    tealDisplayTextSeq (tealAllResults);
-    var retVal = tealCreateSVG(tealAllResults,tealWinXst,tealWinXend,tealWinYend,0,1000,0,200);
-    tealDigShowSVG(retVal, 1200, 380);
-}
-
-function displayError(data) {
-    var res = JSON.parse(data)
-    for (var i = 0; i < res["errors"].length; i++) {
-	sectionResults.innerHTML = '<br /><div class="error">' + res["errors"][i]['title'] + '</div><br />'
-    }
-}
-
-
-function displayResults() {
-    if (this.status === 200) {
-        displayData(this.response)
-        document.getElementById("resButtons").style.display = '';
-        document.getElementById("textResults").style.display = '';
-    } else {
-        displayError(this.response)
-        document.getElementById("resButtons").style.display = 'none';
-        document.getElementById("textResults").style.display = 'none';
-    }
-    resHelp = 0;
-    resultLink.click();
-}
-
-function toggleResultsHelp (strange) {
-    if (resHelp == -1) {
-        return;
-    }
-    if (resHelp == 0) {
-        document.getElementById("resButtons").style.display = '';
-        document.getElementById("results").style.display = '';
-        document.getElementById("textResults").style.display = '';
-        resHelp = 1;
-    } else {
-        document.getElementById("resButtons").style.display = 'none';
-        document.getElementById("results").style.display = 'none';
-        document.getElementById("textResults").style.display = 'none';
-        resHelp = 0;
-    }
-}
-
 function tealDisplayTextSeq (tr) {
     var seq = "";
     for (var i = 0; i < tr.basecallPos.length; i++) {
@@ -354,6 +345,16 @@ function tealCreateOneCalls(trace,col,startX,endX,endY,wdXst,wdXend,wdYst,wdYend
     }
     retVal += "'/>";
     return retVal;
+}
+
+function displayData(data) {
+    tealAllResults = res.data
+    tealWinXst = 0;
+    tealWinXend = 600;
+    tealWinYend = 2300;
+    tealDisplayTextSeq (tealAllResults);
+    var retVal = tealCreateSVG(tealAllResults,tealWinXst,tealWinXend,tealWinYend,0,1000,0,200);
+    tealDigShowSVG(retVal, 1200, 380);
 }
 
 
