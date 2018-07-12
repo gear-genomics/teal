@@ -33,7 +33,7 @@ def upload_file():
             os.makedirs(sf)
        
         if 'showExample' in request.form.keys():
-            fexpname = os.path.join(SAGEWS, "sample.abi")
+            fexpname = os.path.join(TEALWS, "sample.abi")
         else:
             if 'queryFile' not in request.files:
                 return jsonify(errors = [{"title": "Chromatogram file is missing!"}]), 400
