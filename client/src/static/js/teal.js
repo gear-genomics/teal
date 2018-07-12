@@ -347,7 +347,7 @@ function tealCreateOneCalls(trace,col,startX,endX,endY,wdXst,wdXend,wdYst,wdYend
     return retVal;
 }
 
-function displayData(data) {
+function displayData(res) {
     tealAllResults = res.data
     tealWinXst = 0;
     tealWinXend = 600;
