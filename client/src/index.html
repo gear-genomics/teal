@@ -63,31 +63,7 @@
           <i class="fas fa-fire"></i>
           <span id="error-message"></span>
         </div>
-        <div id="result-container" class="d-none">
-          <div id="resButtons">
-            <button id="teal-nav-bw-win" class="btn btn-outline-secondary">prev</button>
-            <button id="teal-nav-bw-bit" class="btn btn-outline-secondary">&lt;</button>
-            <button id="teal-nav-zy-in" class="btn btn-outline-secondary">Bigger Peaks</button>
-            <button id="teal-nav-zy-out" class="btn btn-outline-secondary">Smaller Peaks</button>
-            <button id="teal-nav-zx-in" class="btn btn-outline-secondary">Zoom in</button>
-            <button id="teal-nav-zx-out" class="btn btn-outline-secondary">Zoom Out</button>
-            <button id="teal-nav-fw-bit" class="btn btn-outline-secondary">&gt;</button>
-            <button id="teal-nav-fw-win" class="btn btn-outline-secondary">next</button>
-            <a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a>
-            <button id="teal-nav-hi-a" class="btn btn-outline-secondary"><strong>A</strong></button>
-            <button id="teal-nav-hi-c" class="btn btn-outline-secondary"><strong>C</strong></button>
-            <button id="teal-nav-hi-g" class="btn btn-outline-secondary"><strong>G</strong></button>
-            <button id="teal-nav-hi-t" class="btn btn-outline-secondary"><strong>T</strong></button>
-            <button id="teal-nav-hi-n" class="btn btn-outline-secondary">ACGT</button>
-          </div>
-          <div id="results"></div>
-          <div id="textResults" style="display:none;">
-            <hr>
-            <p>Chromatogram Sequence:</p>
-            <textarea class="form-control" id="teal-fastaText" name="teal-fastaText" rows="7" cols="110"></textarea><br />
-            <br />
-          </div>
-	</div>
+        <div id="traceView"></div>
       </div>
     </div>
   </main>
@@ -127,6 +103,7 @@
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
 
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="static/js/traceView.js"></script>
   <script src="static/js/teal.js"></script>
 
 </body>
