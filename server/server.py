@@ -20,7 +20,7 @@ app.config['UPLOAD_FOLDER'] = os.path.join(app.config['TEAL'], "data")
 app.config['MAX_CONTENT_LENGTH'] = 8 * 1024 * 1024   #maximum of 8MB
 
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in set(['abi','ab1','ab!','ab'])
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in set(['scf','abi','ab1','ab!','ab'])
 
 @app.route('/api/v1/upload', methods=['POST'])
 def upload_file():

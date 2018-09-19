@@ -266,7 +266,7 @@ function createSVG(tr,startX,endX,endY,wdXst,wdXend,wdYst,wdYend) {
     if (tr.hasOwnProperty('refalign')) {
         head = "<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='360' viewBox='-60 -40 1200 360'>";
     } else {
-        head = "<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='280' viewBox='-60 -40 1200 280'>";
+        head = "<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='300' viewBox='-60 -40 1200 300'>";
     }
     return head + retVal;
 }
