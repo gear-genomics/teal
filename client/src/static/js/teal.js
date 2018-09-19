@@ -10,10 +10,7 @@ $('#mainTab a').on('click', function(e) {
 const resultLink = document.getElementById('link-results')
 
 const submitButton = document.getElementById('btn-submit')
-submitButton.addEventListener('click', function() {
-  resultLink.click()
-  run()
-})
+submitButton.addEventListener('click', showUpload)
 
 const exampleButton = document.getElementById('btn-example')
 exampleButton.addEventListener('click', showExample)
@@ -23,10 +20,23 @@ const resultInfo = document.getElementById('result-info')
 const resultError = document.getElementById('result-error')
 var sectionResults = document.getElementById('results')
 
+function showExample() {
+  run("example")
+}
+
+function showUpload() {
+  run("data")
+}
+
 // TODO client-side validation
-function run() {
+function run(stat) {
+  resultLink.click()
   const formData = new FormData()
-  formData.append('queryFile', inputFile.files[0])
+  if (stat == "example") {
+    formData.append('showExample', 'showExample')
+  } else {
+    formData.append('queryFile', inputFile.files[0])
+  }
   hideElement(resultError)
   traceView.deleteContent()
   showElement(resultInfo)
@@ -56,33 +66,6 @@ async function handleSuccess(res) {
     hideElement(resultInfo)
     hideElement(resultError)
     traceView.displayData(res.data)
-}
-
-function showExample() {
-    resultLink.click()
-    const formData = new FormData()
-    formData.append('showExample', 'showExample')
-    traceView.deleteContent()
-    hideElement(resultError)
-    showElement(resultInfo)
-    axios
-	.post(`${API_URL}/upload`, formData)
-	.then(res => {
-	    if (res.status === 200) {
-		handleSuccess(res.data)
-	    }
-	})
-	.catch(err => {
-	    let errorMessage = err
-	    if (err.response) {
-		errorMessage = err.response.data.errors
-		    .map(error => error.title)
-		    .join('; ')
-	    }
-	    hideElement(resultInfo)
-	    showElement(resultError)
-	    resultError.querySelector('#error-message').textContent = errorMessage
-	})
 }
 
 function showElement(element) {
