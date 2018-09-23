@@ -15,7 +15,7 @@
 
   <header class="px-0 py-4">
     <div class="container">
-      <h1 class="display-4 app-name">teal</h1>
+      <h1 class="display-4 app-name">Teal</h1>
         <p class="lead">Visualize trace files.</p>
         <a class="plain" href="https://www-db.embl.de/EMBLPersonGroup-PersonPicture/MailForm/?recipient=ggenomics" target="_blank">
           <i class="fas fa-question"></i> Get help
@@ -34,6 +34,9 @@
       </li>
       <li class="nav-item">
         <a class="nav-link" href="#result-tab" id="link-results">Results</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#help-tab" id="link-help">Help</a>
       </li>
     </ul>
     <div class="tab-content" id="main-tabs">
@@ -65,6 +68,16 @@
         </div>
         <div id="traceView"></div>
       </div>
+
+      <div class="tab-pane" id="help-tab">
+        <p>Teal is a tool to view sanger trace files. It supports *.scf, *.abi, *.ab,
+           *.ab1 and *.ab files. Just select a file and hit submit.<br /><br />
+           Alternatively load the sample data
+           <a href="static/bin/sample.abi">(click to download file)</a>
+           by hitting the "Load Example" button and try the functionality.</p>
+        </p>
+      </div>
+
     </div>
   </main>
 

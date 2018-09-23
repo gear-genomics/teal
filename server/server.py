@@ -51,7 +51,13 @@ def upload_file():
         errfile = os.path.join(sf, "teal_" + uuidstr + ".err")
         with open(logfile, "w") as log:
             with open(errfile, "w") as err:
-                return_code = call(['tracy', 'basecall', '-o', outfile, fexpname], stdout=log, stderr=err)
+                try:
+                    return_code = call(['tracy', 'basecall', '-o', outfile, fexpname], stdout=log, stderr=err)
+                except OSError as e:
+                    if e.errno == os.errno.ENOENT:
+                        return jsonify(errors = [{"title": "Binary ./tracy not found!"}]), 400
+                    else:
+                        return jsonify(errors = [{"title": "OSError " + str(e.errno)  + " running binary ./tracy!"}]), 400
         if return_code != 0:
             errInfo = "!"
             with open(errfile, "r") as err:
