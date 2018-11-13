@@ -62,7 +62,7 @@ function run(stat) {
     })
 }
 
-async function handleSuccess(res) {
+function handleSuccess(res) {
     hideElement(resultInfo)
     hideElement(resultError)
     traceView.displayData(res.data)
