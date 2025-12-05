@@ -73,6 +73,10 @@ function createButtons() {
     html += '<div id="traceView-Sequence" class="d-none">';
     html += '  <hr>\n  <p>Chromatogram Sequence:</p>';
     html += '  <div id="traceView-traceSeqView" class="form-control" style="white-space: pre-wrap; font-family: monospace; min-height: 7em; cursor: text;"></div>';
+    html += '  <div class="mt-1 d-flex align-items-center">';
+    html += '    <button id="traceView-copy-view" class="btn btn-sm btn-outline-secondary mr-2">Copy view range</button>';
+    html += '    <button id="traceView-copy-full" class="btn btn-sm btn-outline-secondary mr-2">Copy full</button>';
+    html += '  </div>';
     html += '  <textarea id="traceView-traceSeq" class="d-none" readonly></textarea>';
     html += '</div>';
     html += '<div id="traceView-Reference" class="d-none">';
@@ -121,6 +125,9 @@ document.addEventListener("DOMContentLoaded", function() {
     navHiTButton.addEventListener('click', navHiT)
     var navHiNButton = document.getElementById('traceView-nav-hi-n')
     navHiNButton.addEventListener('click', navHiN)
+
+    document.getElementById('traceView-copy-view').addEventListener('click', copyViewRange);
+    document.getElementById('traceView-copy-full').addEventListener('click', copyFull);
 
     // Mouse handlers
     attachDragHandlers();
@@ -693,10 +700,11 @@ function attachSeqSelectionHandler(tr) {
     view.addEventListener('select', handler);
 }
 
-// Render and highlight current view in the visible sequence div, with wrapping
+// Render and highlight current view
 function renderSeqView(tr) {
     var view = document.getElementById('traceView-traceSeqView');
     if (!view) return;
+
     var wrapLen = 60;
     var rect = view.getBoundingClientRect();
     var width = rect && rect.width ? rect.width : 0;
@@ -728,6 +736,45 @@ function renderSeqView(tr) {
 // Highlight update wrapper
 function updateHighlight(tr){
     renderSeqView(tr);
+}
+
+// Copy bases currently visible in the trace window
+function copyViewRange() {
+    if (!allResults || !allResults.basecallPos || !traceSeqString) return;
+    var len = Math.min(traceSeqString.length, allResults.basecallPos.length);
+    var startIdx = 0;
+    while (startIdx < len && parseFloat(allResults.basecallPos[startIdx]) < winXst) startIdx++;
+    var endIdx = startIdx;
+    while (endIdx < len && parseFloat(allResults.basecallPos[endIdx]) <= winXend) endIdx++;
+    var textToCopy = traceSeqString.slice(startIdx, endIdx);
+    doCopy(textToCopy);
+}
+
+// Copy full sequence
+function copyFull() {
+    doCopy(traceSeqString || "");
+}
+
+// Clipboard helpers
+function doCopy(text) {
+    if (!text) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).catch(function(){ fallbackCopy(text); });
+    } else {
+        fallbackCopy(text);
+    }
+}
+
+function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'absolute';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    document.body.removeChild(ta);
 }
 
 // Escape helper
