@@ -31,6 +31,7 @@ var frameYst;
 var frameYend;
 var allResults;
 var baseCol;
+var traceSeqString = "";
 
 // Drag state
 var isDragging = false;
@@ -48,6 +49,7 @@ function resetGlobalValues() {
     frameYend = 200;
     baseCol = [["green",1.5],["blue",1.5],["black",1.5],["red",1.5]];
     allResults = "";
+    traceSeqString = "";
 }
 
 function createButtons() {
@@ -70,7 +72,8 @@ function createButtons() {
     html += '<div id="traceView-Traces"></div>';
     html += '<div id="traceView-Sequence" class="d-none">';
     html += '  <hr>\n  <p>Chromatogram Sequence:</p>';
-    html += '  <textarea class="form-control" id="traceView-traceSeq" rows="7" cols="110" readonly></textarea>';
+    html += '  <div id="traceView-traceSeqView" class="form-control" style="white-space: pre-wrap; font-family: monospace; min-height: 7em; cursor: text;"></div>';
+    html += '  <textarea id="traceView-traceSeq" class="d-none" readonly></textarea>';
     html += '</div>';
     html += '<div id="traceView-Reference" class="d-none">';
     html += '  <hr>\n  <p>Reference Sequence:</p>';
@@ -258,6 +261,7 @@ function SVGRepaint(){
     checkWindow(allResults.peakA.length - 1);
     var retVal = createSVG(allResults,winXst,winXend,winYend,frameXst,frameXend,frameYst,frameYend);
     digShowSVG(retVal);
+    updateHighlight(allResults);
 }
 
 function displayTextSeq (tr) {
@@ -267,8 +271,9 @@ function displayTextSeq (tr) {
         var pos = base.indexOf(":");
         seq += base.charAt(pos + 1);
     }
-    var outField = document.getElementById('traceView-traceSeq')
-    outField.value = seq.replace(/-/g,"");
+    traceSeqString = seq.replace(/-/g,"");
+    var hidden = document.getElementById('traceView-traceSeq');
+    hidden.value = traceSeqString;
     var trSeq = document.getElementById('traceView-Sequence');
     showElement(trSeq);
 
@@ -278,7 +283,8 @@ function displayTextSeq (tr) {
         outField2.value = ref.replace(/-/g,"");
         var refSeq = document.getElementById('traceView-Reference');
         showElement(refSeq);
-    } 
+    }
+    renderSeqView(tr);
 }
 
 // Faster: inline SVG instead of data URL image
@@ -641,28 +647,39 @@ function attachWheelZoom() {
     }, { passive: false });
 }
 
-// Select-to-center-and-zoom on chromatogram sequence
+// Select-to-center-and-zoom on chromatogram sequence (span-based)
 function attachSeqSelectionHandler(tr) {
-    var seqField = document.getElementById('traceView-traceSeq');
-    if (!seqField || !tr || !tr.basecallPos || !tr.basecallPos.length) return;
+    var view = document.getElementById('traceView-traceSeqView');
+    if (!view || !tr || !tr.basecallPos || !tr.basecallPos.length) return;
+
+    function getSpanIndex(node){
+        while (node && node !== view){
+            if (node.dataset && node.dataset.idx) return parseInt(node.dataset.idx);
+            node = node.parentNode;
+        }
+        return null;
+    }
 
     const handler = () => {
-        const s = seqField.selectionStart;
-        const e = seqField.selectionEnd;
-        if (e - s <= 0) return; // nothing selected
-
-        // Indexes in basecallPos are 0-based; selectionStart is 0-based
-        const startIdx = Math.max(0, s);
-        const endIdx = Math.min(tr.basecallPos.length - 1, e - 1);
+        var sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return;
+        var range = sel.getRangeAt(0);
+        var startIdx = getSpanIndex(range.startContainer);
+        var endIdx = getSpanIndex(range.endContainer);
+        if (startIdx === null || endIdx === null) return;
+        if (range.endOffset === 0) endIdx = endIdx - 1;
+        if (startIdx > endIdx) { var t=startIdx; startIdx=endIdx; endIdx=t; }
+        startIdx = Math.max(0,startIdx);
+        endIdx = Math.min(tr.basecallPos.length-1, endIdx);
         if (endIdx < startIdx) return;
 
-        const startBase = parseFloat(tr.basecallPos[startIdx]);
-        const endBase   = parseFloat(tr.basecallPos[endIdx]);
+        var startBase = parseFloat(tr.basecallPos[startIdx]);
+        var endBase   = parseFloat(tr.basecallPos[endIdx]);
         if (!isFinite(startBase) || !isFinite(endBase)) return;
 
-        const selSpan = Math.max(1, endBase - startBase + 1);
-        const spanWithMargin = Math.max(10, selSpan * 1.2); // pad 20%, min 10
-        const centerBase = (startBase + endBase) / 2;
+        var selSpan = Math.max(1, endBase - startBase + 1);
+        var spanWithMargin = Math.max(10, selSpan * 1.2);
+        var centerBase = (startBase + endBase) / 2;
 
         winXst = centerBase - spanWithMargin / 2;
         winXend = centerBase + spanWithMargin / 2;
@@ -671,8 +688,47 @@ function attachSeqSelectionHandler(tr) {
         SVGRepaint();
     };
 
-    // Use both mouse and keyboard selection signals
-    seqField.addEventListener('mouseup', handler);
-    seqField.addEventListener('keyup', handler);
-    seqField.addEventListener('select', handler);
+    view.addEventListener('mouseup', handler);
+    view.addEventListener('keyup', handler);
+    view.addEventListener('select', handler);
 }
+
+// Render and highlight current view in the visible sequence div, with wrapping
+function renderSeqView(tr) {
+    var view = document.getElementById('traceView-traceSeqView');
+    if (!view) return;
+    var wrapLen = 60;
+    var rect = view.getBoundingClientRect();
+    var width = rect && rect.width ? rect.width : 0;
+    if (width > 0) {
+        var fs = parseFloat(window.getComputedStyle(view).fontSize) || 12;
+        var charW = fs * 0.62;
+        var calc = Math.floor(width / charW);
+        if (calc > 5) wrapLen = calc;
+    }
+
+    var html = [];
+    var len = Math.min(traceSeqString.length, tr.basecallPos.length);
+    var maxX = tr.peakA.length - 1;
+
+    checkWindow(maxX);
+    for (var i=0;i<len;i++){
+        if (i > 0 && i % wrapLen === 0) {
+            html.push('<br>');
+        }
+        var b = traceSeqString.charAt(i);
+        var posVal = parseFloat(tr.basecallPos[i]);
+        var inView = (posVal >= winXst && posVal <= winXend);
+        var cls = inView ? 'text-primary font-weight-bold' : '';
+        html.push('<span data-idx="'+i+'" class="'+cls+'">'+escapeHtml(b)+'</span>');
+    }
+    view.innerHTML = html.join('');
+}
+
+// Highlight update wrapper
+function updateHighlight(tr){
+    renderSeqView(tr);
+}
+
+// Escape helper
+function escapeHtml(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
