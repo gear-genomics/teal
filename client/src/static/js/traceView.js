@@ -32,6 +32,12 @@ var frameYend;
 var allResults;
 var baseCol;
 
+// Drag state
+var isDragging = false;
+var dragStartX = 0;
+var dragWinXst = 0;
+var dragWinXend = 0;
+
 function resetGlobalValues() {
     winXst = 0;
     winXend = 600;
@@ -64,11 +70,11 @@ function createButtons() {
     html += '<div id="traceView-Traces"></div>';
     html += '<div id="traceView-Sequence" class="d-none">';
     html += '  <hr>\n  <p>Chromatogram Sequence:</p>';
-    html += '<textarea class="form-control" id="traceView-traceSeq" rows="7" cols="110"></textarea>';
+    html += '  <textarea class="form-control" id="traceView-traceSeq" rows="7" cols="110" readonly></textarea>';
     html += '</div>';
     html += '<div id="traceView-Reference" class="d-none">';
     html += '  <hr>\n  <p>Reference Sequence:</p>';
-    html += '<textarea class="form-control" id="traceView-refSeq" rows="7" cols="110"></textarea>';
+    html += '  <textarea class="form-control" id="traceView-refSeq" rows="7" cols="110"></textarea>';
     html += '</div>';
     return html;
 }
@@ -112,7 +118,38 @@ document.addEventListener("DOMContentLoaded", function() {
     navHiTButton.addEventListener('click', navHiT)
     var navHiNButton = document.getElementById('traceView-nav-hi-n')
     navHiNButton.addEventListener('click', navHiN)
+
+    // Mouse handlers
+    attachDragHandlers();
+    attachWheelZoom();
 });
+
+// Integer window start and end
+function getIntWindow(startX, endX, maxLen) {
+    var s = Math.max(0, Math.floor(startX));
+    var e = Math.min(maxLen, Math.ceil(endX));
+    if (e <= s) e = s + 1;
+    return { s: s, e: e };
+}
+
+// Set window bounds
+function checkWindow(maxX) {
+    if (!isFinite(winXst) || !isFinite(winXend)) {
+        winXst = 0; winXend = 1;
+    }
+    if (winXend <= winXst) {
+        winXend = winXst + 1;
+    }
+    if (winXst < 0) {
+        var d = -winXst; winXst = 0; winXend += d;
+    }
+    if (maxX >= 0 && winXend > maxX) {
+        var over = winXend - maxX;
+        winXst = Math.max(0, winXst - over);
+        winXend = maxX;
+    }
+    if (winXend - winXst < 1) winXend = winXst + 1;
+}
 
 function navFaintCol() {
     baseCol = [["#a6d3a6",1.5],["#a6a6ff",1.5],["#a6a6a6",1.5],["#ffa6a6",1.5]];
@@ -217,6 +254,8 @@ function navFwWin() {
 }
 
 function SVGRepaint(){
+    if (!allResults || !allResults.peakA) return;
+    checkWindow(allResults.peakA.length - 1);
     var retVal = createSVG(allResults,winXst,winXend,winYend,frameXst,frameXend,frameYst,frameYend);
     digShowSVG(retVal);
 }
@@ -226,9 +265,6 @@ function displayTextSeq (tr) {
     for (var i = 0; i < tr.basecallPos.length; i++) {
         var base = tr.basecalls[tr.basecallPos[i]] + " ";
         var pos = base.indexOf(":");
-    //    if ((i % 60) === 0 && i != 0) {
-    //        seq += "\n";
-    //    }
         seq += base.charAt(pos + 1);
     }
     var outField = document.getElementById('traceView-traceSeq')
@@ -245,17 +281,14 @@ function displayTextSeq (tr) {
     } 
 }
 
+// Faster: inline SVG instead of data URL image
 function digShowSVG(svg) {
-    var retVal = svg;
-    var regEx1 = /</g;
-    retVal = retVal.replace(regEx1, "%3C");
-    var regEx2 = />/g;
-    retVal = retVal.replace(regEx2, "%3E");
-    var regEx3 = /#/g;
-    retVal = retVal.replace(regEx3, "%23");
-    retVal = '<img src="data:image/svg+xml,' + retVal + '" alt="Digest-SVG">';
-    var sectionResults = document.getElementById('traceView-Traces')
-    sectionResults.innerHTML = retVal;
+    var sectionResults = document.getElementById('traceView-Traces');
+    if (sectionResults.firstElementChild && sectionResults.firstElementChild.tagName.toLowerCase() === 'svg') {
+        sectionResults.firstElementChild.outerHTML = svg;
+    } else {
+        sectionResults.innerHTML = svg;
+    }
 }
 
 function createSVG(tr,startX,endX,endY,wdXst,wdXend,wdYst,wdYend) {
@@ -272,6 +305,9 @@ function createSVG(tr,startX,endX,endY,wdXst,wdXend,wdYst,wdYend) {
 }
 
 function createCoodinates (tr,startX,endX,endY,wdXst,wdXend,wdYst,wdYend){
+    var w = getIntWindow(startX, endX, tr.peakA.length);
+    startX = w.s; endX = w.e;
+
     var lineXst = wdXst - 5;
     var lineXend = wdXend + 5;
     var lineYst = wdYst - 5;
@@ -286,9 +322,6 @@ function createCoodinates (tr,startX,endX,endY,wdXst,wdXend,wdYst,wdYend){
     for (var i = 0; i < tr.basecallPos.length; i++) {
         var base = tr.basecalls[tr.basecallPos[i]] + " ";
         var pos = base.indexOf(":");
-    //    if ((i % 60) === 0 && i != 0) {
-    //        seq += "\n";
-    //    }
         prim += base.charAt(pos + 1);
         if (pos + 3 < base.length) {
             sec += base.charAt(pos + 3);
@@ -301,13 +334,13 @@ function createCoodinates (tr,startX,endX,endY,wdXst,wdXend,wdYst,wdYend){
     var firstBase = -1;
     var lastBase = -1;
     for (var i = 0; i < tr.basecallPos.length; i++) {
-        if ((parseFloat(tr.basecallPos[i]) > startX) &&
-            (parseFloat(tr.basecallPos[i]) < endX)) {
+        var posVal = parseFloat(tr.basecallPos[i]);
+        if ((posVal > startX) && (posVal < endX)) {
             if (firstBase === -1) {
                 firstBase = tr.basecalls[tr.basecallPos[i]];
             }
             lastBase = tr.basecalls[tr.basecallPos[i]];
-            var xPos = wdXst + (parseFloat(tr.basecallPos[i]) - startX) / (endX - startX)  * (wdXend - wdXst);
+            var xPos = wdXst + (posVal - startX) / (endX - startX)  * (wdXend - wdXst);
             retVal += "<line x1='" + xPos + "' y1='" + lineYend;
             retVal += "' x2='" + xPos + "' y2='" + (lineYend + 7)+ "' stroke-width='2' stroke='black' />";
             retVal += "<text x='" + (xPos + 3) + "' y='" + (lineYend + 11);
@@ -393,14 +426,16 @@ function createCoodinates (tr,startX,endX,endY,wdXst,wdXend,wdYst,wdYend){
 }
 
 function createAllCalls(tr,startX,endX,endY,wdXst,wdXend,wdYst,wdYend){
-    var retVal = createOneCalls(tr.peakA,baseCol[0],startX,endX,endY,wdXst,wdXend,wdYst,wdYend);
-    retVal += createOneCalls(tr.peakC,baseCol[1],startX,endX,endY,wdXst,wdXend,wdYst,wdYend);
-    retVal += createOneCalls(tr.peakG,baseCol[2],startX,endX,endY,wdXst,wdXend,wdYst,wdYend);
-    retVal += createOneCalls(tr.peakT,baseCol[3],startX,endX,endY,wdXst,wdXend,wdYst,wdYend);
+    var w = getIntWindow(startX, endX, tr.peakA.length);
+    var retVal = createOneCalls(tr.peakA,baseCol[0],w.s,w.e,endY,wdXst,wdXend,wdYst,wdYend);
+    retVal += createOneCalls(tr.peakC,baseCol[1],w.s,w.e,endY,wdXst,wdXend,wdYst,wdYend);
+    retVal += createOneCalls(tr.peakG,baseCol[2],w.s,w.e,endY,wdXst,wdXend,wdYst,wdYend);
+    retVal += createOneCalls(tr.peakT,baseCol[3],w.s,w.e,endY,wdXst,wdXend,wdYst,wdYend);
     return retVal;
 }
 
 function createOneCalls(trace,col,startX,endX,endY,wdXst,wdXend,wdYst,wdYend){
+    if (endX <= startX) return "";
     var startTag = "<polyline fill='none' stroke-linejoin='round' stroke='" + col[0];
     startTag += "' stroke-width='" + col[1] + "' points='";
     var retVal = "";
@@ -419,7 +454,9 @@ function createOneCalls(trace,col,startX,endX,endY,wdXst,wdXend,wdYst,wdYend){
             if (iden > 1.0) {
                 iden = 1;
             }
-            var xPos = wdXst + (i - startX) / (endX - startX)  * (wdXend - wdXst);
+            var span = (endX - startX);
+            if (span === 0) continue;
+            var xPos = wdXst + (i - startX) / span * (wdXend - wdXst);
             var yPos = wdYend - iden * (wdYend - wdYst);
             retVal += xPos + "," + yPos + " ";
         } 
@@ -429,6 +466,7 @@ function createOneCalls(trace,col,startX,endX,endY,wdXst,wdXend,wdYst,wdYend){
     }
     return retVal;
 }
+
 function errorMessage(err) {
     deleteContent();
     var html = '<div id="traceView-error" class="alert alert-danger" role="alert">';
@@ -456,7 +494,7 @@ function displayData(res) {
         return;
     }
     if (allResults.hasOwnProperty('peakT') == false){
-        errorMessage("Bad JSON data: peakt array missing!");
+        errorMessage("Bad JSON data: peakT array missing!");
         return;
     }
     if (allResults.hasOwnProperty('basecallPos') == false){
@@ -464,10 +502,11 @@ function displayData(res) {
         return;
     }
     if (allResults.hasOwnProperty('basecalls') == false){
-        errorMessage("Bad JSON data: basecalls array missing!");
+        errorMessage("Bad JSON data: basecalls object missing!");
         return;
     }
     displayTextSeq(allResults);
+    attachSeqSelectionHandler(allResults);
     SVGRepaint();
     var trBtn = document.getElementById('traceView-Buttons');
     showElement(trBtn);
@@ -488,3 +527,152 @@ function deleteContent() {
     outField2.value = "";
 }
 
+// Drag handlers (direction inverted: drag right -> earlier bases)
+function attachDragHandlers() {
+    var traces = document.getElementById('traceView-Traces');
+    if (!traces) return;
+
+    traces.style.cursor = 'grab';
+
+    traces.addEventListener('mousedown', function (e) {
+        isDragging = true;
+        dragStartX = e.clientX;
+        dragWinXst = winXst;
+        dragWinXend = winXend;
+        traces.style.cursor = 'grabbing';
+        e.preventDefault(); // avoid text selection
+    });
+
+    let rafPending = false;
+    function repaint() {
+        rafPending = false;
+        SVGRepaint();
+    }
+
+    window.addEventListener('mousemove', function (e) {
+        if (!isDragging) return;
+        if (!allResults || !allResults.peakA) return;
+
+        var rect = traces.getBoundingClientRect();
+        var widthPx = rect.width || (frameXend - frameXst);
+        if (!widthPx || widthPx <= 0) return;
+
+        var basesPerPx = (dragWinXend - dragWinXst) / widthPx;
+        if (!isFinite(basesPerPx) || basesPerPx === 0) return;
+
+        var dxPx = e.clientX - dragStartX;
+        var deltaBases = dxPx * basesPerPx;
+
+        // Inverted direction: drag right -> earlier bases
+        var newSt = dragWinXst - deltaBases;
+        var newEnd = dragWinXend - deltaBases;
+
+        var maxX = allResults.peakA.length - 1;
+        if (newSt < 0) { newEnd -= newSt; newSt = 0; }
+        if (newEnd > maxX) {
+            var over = newEnd - maxX;
+            newSt = Math.max(0, newSt - over);
+            newEnd = maxX;
+        }
+        if (newEnd - newSt < 10) newEnd = newSt + 10;
+
+        winXst = newSt;
+        winXend = newEnd;
+        checkWindow(maxX);
+
+        if (!rafPending) {
+            rafPending = true;
+            requestAnimationFrame(repaint);
+        }
+    });
+
+    function stopDrag() {
+        isDragging = false;
+        traces.style.cursor = 'grab';
+    }
+    window.addEventListener('mouseup', stopDrag);
+    window.addEventListener('mouseleave', stopDrag);
+}
+
+// Mouse wheel zoom (over the trace view)
+function attachWheelZoom() {
+    var traces = document.getElementById('traceView-Traces');
+    if (!traces) return;
+
+    traces.addEventListener('wheel', function(e) {
+        if (!allResults || !allResults.peakA) return;
+
+        e.preventDefault(); // stop page scroll
+
+        var rect = traces.getBoundingClientRect();
+        var widthPx = rect.width || (frameXend - frameXst);
+        if (!widthPx || widthPx <= 0) return;
+
+        var span = winXend - winXst;
+        if (span <= 0) return;
+
+        // Mouse position in bases
+        var relPx = e.clientX - rect.left;
+        var relRatio = Math.min(1, Math.max(0, relPx / widthPx));
+        var centerBase = winXst + relRatio * span;
+
+        // Zoom factor
+        var factor = (e.deltaY < 0) ? 0.8 : 1.25; // up = zoom in, down = zoom out
+        var newSpan = span * factor;
+        if (newSpan < 10) newSpan = 10;
+
+        var newSt = centerBase - relRatio * newSpan;
+        var newEnd = newSt + newSpan;
+
+        var maxX = allResults.peakA.length - 1;
+        if (newSt < 0) { newEnd -= newSt; newSt = 0; }
+        if (newEnd > maxX) {
+            var over = newEnd - maxX;
+            newSt = Math.max(0, newSt - over);
+            newEnd = maxX;
+        }
+        if (newEnd - newSt < 10) newEnd = newSt + 10;
+
+        winXst = newSt;
+        winXend = newEnd;
+        checkWindow(maxX);
+
+        requestAnimationFrame(SVGRepaint);
+    }, { passive: false });
+}
+
+// Select-to-center-and-zoom on chromatogram sequence
+function attachSeqSelectionHandler(tr) {
+    var seqField = document.getElementById('traceView-traceSeq');
+    if (!seqField || !tr || !tr.basecallPos || !tr.basecallPos.length) return;
+
+    const handler = () => {
+        const s = seqField.selectionStart;
+        const e = seqField.selectionEnd;
+        if (e - s <= 0) return; // nothing selected
+
+        // Indexes in basecallPos are 0-based; selectionStart is 0-based
+        const startIdx = Math.max(0, s);
+        const endIdx = Math.min(tr.basecallPos.length - 1, e - 1);
+        if (endIdx < startIdx) return;
+
+        const startBase = parseFloat(tr.basecallPos[startIdx]);
+        const endBase   = parseFloat(tr.basecallPos[endIdx]);
+        if (!isFinite(startBase) || !isFinite(endBase)) return;
+
+        const selSpan = Math.max(1, endBase - startBase + 1);
+        const spanWithMargin = Math.max(10, selSpan * 1.2); // pad 20%, min 10
+        const centerBase = (startBase + endBase) / 2;
+
+        winXst = centerBase - spanWithMargin / 2;
+        winXend = centerBase + spanWithMargin / 2;
+
+        checkWindow(tr.peakA.length - 1);
+        SVGRepaint();
+    };
+
+    // Use both mouse and keyboard selection signals
+    seqField.addEventListener('mouseup', handler);
+    seqField.addEventListener('keyup', handler);
+    seqField.addEventListener('select', handler);
+}
