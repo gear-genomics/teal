@@ -8,6 +8,7 @@
 //  "peakG": [0, 0, 0, 0, ...],    # Essential
 //  "peakT": [1265, 1134, ...],    # Essential
 //  "basecallPos": [12, 34,  ...], # Essential
+//  "basecallQual": [40, 38, ...], # Essential
 //  "basecalls": {"12":"1:C", "34":"2:C", "41":"3:C",    # Essential
 //  "refchr": "example",           # Optional
 //  "refpos": 32,                  # Optional
@@ -70,6 +71,7 @@ function createButtons() {
     html += '  <button id="traceView-nav-hi-n" class="btn btn-outline-secondary">ACGT</button>';
     html += '</div>';
     html += '<div id="traceView-Traces"></div>';
+    html += '<div id="traceView-tooltip" class="traceView-tooltip d-none" style="position:absolute; pointer-events:none; background:rgba(255,255,255,0.95); border:1px solid #ccc; border-radius:4px; padding:6px 8px; font-size:12px; color:#000; box-shadow:0 2px 6px rgba(0,0,0,0.2); z-index:1000;"></div>';
     html += '<div id="traceView-Sequence" class="d-none">';
     html += '  <hr>\n  <p>Chromatogram Sequence:</p>';
     html += '  <div id="traceView-traceSeqView" class="form-control" style="white-space: pre-wrap; font-family: monospace; min-height: 7em; cursor: text;"></div>';
@@ -132,6 +134,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // Mouse handlers
     attachDragHandlers();
     attachWheelZoom();
+    attachTooltipHandlers();
 });
 
 // Integer window start and end
@@ -354,6 +357,10 @@ function createCoodinates (tr,startX,endX,endY,wdXst,wdXend,wdYst,wdYend){
             }
             lastBase = tr.basecalls[tr.basecallPos[i]];
             var xPos = wdXst + (posVal - startX) / (endX - startX)  * (wdXend - wdXst);
+            var baseChar = prim.charAt(i);
+            var qual = (tr.basecallQual && tr.basecallQual.length > i) ? tr.basecallQual[i] : "";
+            retVal += "<g class='traceView-base-tick' data-idx='" + i + "' data-pos='" + tr.basecallPos[i];
+            retVal += "' data-base='" + baseChar + "' data-qual='" + qual + "'>";
             retVal += "<line x1='" + xPos + "' y1='" + lineYend;
             retVal += "' x2='" + xPos + "' y2='" + (lineYend + 7)+ "' stroke-width='2' stroke='black' />";
             retVal += "<text x='" + (xPos + 3) + "' y='" + (lineYend + 11);
@@ -375,6 +382,7 @@ function createCoodinates (tr,startX,endX,endY,wdXst,wdXend,wdYst,wdYend){
                 retVal += tr.refalign.charAt(i);
                 retVal +=  "</text>";
             }
+            retVal += "</g>";
         }
     }
 
@@ -514,6 +522,14 @@ function displayData(res) {
         errorMessage("Bad JSON data: basecallPos array missing!");
         return;
     }
+    if (allResults.hasOwnProperty('basecallQual') == false){
+        errorMessage("Bad JSON data: basecallQual array missing!");
+        return;
+    }
+    if (allResults.basecallQual.length !== allResults.basecallPos.length){
+        errorMessage("Bad JSON data: basecallQual length mismatch with basecallPos!");
+        return;
+    }
     if (allResults.hasOwnProperty('basecalls') == false){
         errorMessage("Bad JSON data: basecalls object missing!");
         return;
@@ -530,6 +546,8 @@ function deleteContent() {
     hideElement(trBtn);
     var trTrc = document.getElementById('traceView-Traces');
     trTrc.innerHTML = "";
+    var tooltip = document.getElementById('traceView-tooltip');
+    if (tooltip) hideElement(tooltip);
     var trSeq = document.getElementById('traceView-Sequence');
     hideElement(trSeq);
     var outField = document.getElementById('traceView-traceSeq')
@@ -652,6 +670,33 @@ function attachWheelZoom() {
 
         requestAnimationFrame(SVGRepaint);
     }, { passive: false });
+}
+
+// Hover tooltip over base ticks
+function attachTooltipHandlers() {
+    var traces = document.getElementById('traceView-Traces');
+    var tooltip = document.getElementById('traceView-tooltip');
+    if (!traces || !tooltip) return;
+
+    function hideTooltip() {
+        tooltip.classList.add('d-none');
+    }
+
+    traces.addEventListener('mouseleave', hideTooltip);
+
+    traces.addEventListener('mousemove', function(e){
+        var target = e.target.closest('.traceView-base-tick');
+        if (!target) {
+            hideTooltip();
+            return;
+        }
+        var base = target.dataset.base || "";
+        var qual = target.dataset.qual || "";
+        tooltip.innerHTML = "<div><strong>Base:</strong> " + escapeHtml(base) + "</div>" + "<div><strong>Quality:</strong> " + escapeHtml(qual) + "</div>";
+        tooltip.style.left = (e.clientX + window.scrollX + 12) + "px";
+        tooltip.style.top = (e.clientY + window.scrollY + 12) + "px";
+        tooltip.classList.remove('d-none');
+    });
 }
 
 // Select-to-center-and-zoom on chromatogram sequence (span-based)
