@@ -648,7 +648,8 @@ function attachWheelZoom() {
         var centerBase = winXst + relRatio * span;
 
         // Zoom factor
-        var factor = (e.deltaY < 0) ? 0.8 : 1.25; // up = zoom in, down = zoom out
+        var cDelta = Math.sign(e.deltaY); // -1, 0, or +1
+        var factor = (cDelta < 0) ? 0.95 : 1.05; // zoom in / zoom out
         var newSpan = span * factor;
         if (newSpan < 10) newSpan = 10;
 
