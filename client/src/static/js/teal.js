@@ -1,6 +1,10 @@
 const API_URL = process.env.API_URL
 
-var traceView = require('./traceView');
+var TraceViewElement = require('./traceView.js').default;
+
+window.customElements.define('trace-view', TraceViewElement);
+
+var traceView = document.getElementById('traceView');
 
 $('#mainTab a').on('click', function(e) {
   e.preventDefault()
