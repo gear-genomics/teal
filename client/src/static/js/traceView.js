@@ -30,6 +30,8 @@ export default class TraceViewElement extends HTMLElement {
         if (this._onMouseMove) window.removeEventListener('mousemove', this._onMouseMove);
         if (this._onMouseUp) window.removeEventListener('mouseup', this._onMouseUp);
         if (this._onMouseLeaveWin) window.removeEventListener('mouseleave', this._onMouseLeaveWin);
+        this._onMouseMove = this._onMouseUp = this._onMouseLeaveWin = null;
+        this._initialized = false;
     }
 
     #el(id) {
@@ -539,10 +541,10 @@ export default class TraceViewElement extends HTMLElement {
                 peakG: res.peakG,
                 peakT: res.peakT,
                 basecallPos: res.basecallPos,
-                basecallQual: res.basecallQual,
                 basecalls: res.basecalls
             }
         };
+        if (res.hasOwnProperty('basecallQual')) out.gappedTrace.basecallQual = res.basecallQual;
         if (res.hasOwnProperty('refchr'))   out.refchr   = res.refchr;
         if (res.hasOwnProperty('refpos'))   out.refpos   = res.refpos;
         if (res.hasOwnProperty('refalign')) out.refalign = res.refalign;
@@ -893,6 +895,7 @@ export default class TraceViewElement extends HTMLElement {
             html.push('<span class="' + cls + '">' + this.#escapeHtml(c) + '</span>');
         }
         view.innerHTML = html.join('');
+        this.#centerSeqViewOnHighlight(view);
     }
 
     // Highlight update wrapper
